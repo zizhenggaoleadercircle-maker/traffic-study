@@ -2,6 +2,12 @@
 
 Living document: update this file when you add scripts, tables, env vars, or change how PostgreSQL / CKAN integration works.
 
+## Git repository
+
+Remote: [https://github.com/zizhenggaoleadercircle-maker/traffic-study](https://github.com/zizhenggaoleadercircle-maker/traffic-study)
+
+`.env` and `.venv` are not committed; copy `.env.example` to `.env` after cloning.
+
 ## Quick commands
 
 ```bash
@@ -105,3 +111,4 @@ Implementation details (parsing `hr` timestamps, `t`/`f` booleans, etc.) are doc
 | Date | Change |
 |------|--------|
 | 2026-04-17 | Initial walkthrough: `connect_db.py`, `import_operating_hours.py`, `.env.example`, CKAN sample load. |
+| 2026-04-17 | Pushed to GitHub `traffic-study`; merged remote `README.md`; documented repo URL here. |
