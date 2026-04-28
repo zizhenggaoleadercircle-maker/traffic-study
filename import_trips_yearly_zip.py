@@ -3,13 +3,19 @@
 Load full-year trip ZIPs from Toronto Open Data (Private Transportation Companies –
 Summary and Trip Data) into PostgreSQL.
 
+Each calendar year is stored in its own table: pts_trips_yearly_{year}
+(e.g. pts_trips_yearly_2024, pts_trips_yearly_2025). There is no source_year column.
+
 Each year is published as trips_YYYY.zip containing monthly trips_YYYYMM.csv files.
 Schema matches the datastore trips_sample resource (no CKAN _id).
 
 Flow:
   1. package_show → direct download URL for trips_{year}.zip
   2. Download ZIP to a temp file, stream each CSV inside
-  3. COPY rows into pts_trips_yearly (replaces rows for requested years by default)
+  3. COPY rows into pts_trips_yearly_{year} (truncates those tables for requested years)
+
+If you previously used the unified table pts_trips_yearly, run once:
+  python migrate_pts_trips_yearly_split.py
 
 CKAN API: https://docs.ckan.org/en/latest/api/
 """
@@ -39,7 +45,11 @@ from import_summary_trip_data import (
 
 BASE_URL_DEFAULT = "https://ckan0.cf.opendata.inter.prod-toronto.ca"
 PACKAGE_ID = "private-transportation-companies-summary-and-trip-data"
-TABLE_NAME = "pts_trips_yearly"
+
+
+def table_name_for_year(year: int) -> str:
+    return f"pts_trips_yearly_{year}"
+
 
 # trips_YYYYMM.csv from published ZIPs (verified 2025-01).
 EXPECTED_COLUMNS = frozenset(
@@ -61,10 +71,10 @@ EXPECTED_COLUMNS = frozenset(
 )
 
 
-DDL = f"""
-CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+def ddl_year_table(table: str) -> str:
+    return f"""
+CREATE TABLE IF NOT EXISTS {table} (
     id BIGSERIAL PRIMARY KEY,
-    source_year SMALLINT NOT NULL,
     dt DATE,
     pickup_hr TIMESTAMPTZ NOT NULL,
     pickup_municipality TEXT,
@@ -82,29 +92,34 @@ CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
 )
 """
 
-DDL_IDX_YEAR_DT = (
-    f"CREATE INDEX IF NOT EXISTS idx_{TABLE_NAME}_year_dt ON {TABLE_NAME} (source_year, dt)"
-)
-DDL_IDX_PICKUP_HR = (
-    f"CREATE INDEX IF NOT EXISTS idx_{TABLE_NAME}_pickup_hr ON {TABLE_NAME} (pickup_hr)"
-)
 
-COPY_SQL = f"""
-COPY {TABLE_NAME} (
-    source_year, dt, pickup_hr,
+def ddl_indexes(table: str) -> list[str]:
+    safe = table.replace(".", "_")
+    return [
+        f"CREATE INDEX IF NOT EXISTS idx_{safe}_dt ON {table} (dt)",
+        f"CREATE INDEX IF NOT EXISTS idx_{safe}_pickup_hr ON {table} (pickup_hr)",
+    ]
+
+
+COPY_COLUMN_LIST = """
+    dt, pickup_hr,
     pickup_municipality, pickup_community_council, pickup_ward,
     dropoff_municipality, dropoff_community_council, dropoff_ward,
     trips_total, fare_avg, waittime_avg, distance_avg, duration_avg
-) FROM STDIN
-"""
+""".replace(
+    "\n", " "
+).strip()
 
 
-def zip_row(source_year: int, rec: dict[str, Any]) -> tuple[Any, ...]:
+def copy_sql(table: str) -> str:
+    return f"COPY {table} ({COPY_COLUMN_LIST}) FROM STDIN"
+
+
+def zip_row_flat(rec: dict[str, Any]) -> tuple[Any, ...]:
     ph = parse_timestamp(rec.get("pickup_hr"))
     if ph is None:
         raise ValueError("missing or invalid pickup_hr")
     return (
-        source_year,
         parse_date(rec.get("dt")),
         ph,
         rec.get("pickup_municipality"),
@@ -149,7 +164,7 @@ def download_zip(url: str, dest: Path, session: Any) -> None:
                 f.write(chunk)
 
 
-def iter_csv_rows(zf: zipfile.ZipFile, source_year: int) -> Iterator[tuple[Any, ...]]:
+def iter_csv_rows(zf: zipfile.ZipFile) -> Iterator[tuple[Any, ...]]:
     names = sorted(n for n in zf.namelist() if n.lower().endswith(".csv"))
     if not names:
         raise RuntimeError("ZIP contains no .csv files")
@@ -168,7 +183,7 @@ def iter_csv_rows(zf: zipfile.ZipFile, source_year: int) -> Iterator[tuple[Any, 
                 )
             n = 0
             for rec in reader:
-                yield zip_row(source_year, rec)
+                yield zip_row_flat(rec)
                 n += 1
             print(f"  {member}: {n:,} rows", flush=True)
 
@@ -177,7 +192,7 @@ def main() -> None:
     import requests
 
     parser = argparse.ArgumentParser(
-        description="Load trips_YYYY.zip monthly CSVs into PostgreSQL.",
+        description="Load trips_YYYY.zip monthly CSVs into per-year tables pts_trips_yearly_{year}.",
     )
     parser.add_argument(
         "--years",
@@ -219,7 +234,7 @@ def main() -> None:
     if args.dry_run:
         for year in args.years:
             zip_url = get_zip_download_url(args.base_url, session, year)
-            print(f"{year}: {zip_url}")
+            print(f"{year}: {zip_url} -> table {table_name_for_year(year)}")
             tmp: Path | None = None
             try:
                 fd, tmp_str = tempfile.mkstemp(suffix=f"_{year}.zip")
@@ -229,7 +244,7 @@ def main() -> None:
                 if args.keep_zip:
                     print(f"  saved: {tmp}")
                 with zipfile.ZipFile(tmp, "r") as zf:
-                    count = sum(1 for _ in iter_csv_rows(zf, year))
+                    count = sum(1 for _ in iter_csv_rows(zf))
                 print(f"{year}: total rows {count:,}")
                 total_copied += count
             finally:
@@ -241,18 +256,19 @@ def main() -> None:
     import psycopg
 
     with psycopg.connect(db_url) as conn:
-        years = list(args.years)
-        ph = ",".join(["%s"] * len(years))
-        with conn.cursor() as cur:
-            cur.execute(DDL)
-            cur.execute(DDL_IDX_YEAR_DT)
-            cur.execute(DDL_IDX_PICKUP_HR)
-            cur.execute(f"DELETE FROM {TABLE_NAME} WHERE source_year IN ({ph})", years)
-        conn.commit()
+        for year in args.years:
+            tname = table_name_for_year(year)
+            with conn.cursor() as cur:
+                cur.execute(ddl_year_table(tname))
+                for stmt in ddl_indexes(tname):
+                    cur.execute(stmt)
+                cur.execute(f"TRUNCATE TABLE {tname}")
+            conn.commit()
 
         for year in args.years:
+            tname = table_name_for_year(year)
             zip_url = get_zip_download_url(args.base_url, session, year)
-            print(f"Loading {year} from {zip_url}")
+            print(f"Loading {year} into {tname} from {zip_url}")
             tmp: Path | None = None
             try:
                 fd, tmp_str = tempfile.mkstemp(suffix=f"_{year}.zip")
@@ -264,12 +280,12 @@ def main() -> None:
                 year_rows = 0
                 with zipfile.ZipFile(tmp, "r") as zf:
                     with conn.cursor() as cur:
-                        with cur.copy(COPY_SQL) as copy:
-                            for tup in iter_csv_rows(zf, year):
+                        with cur.copy(copy_sql(tname)) as copy:
+                            for tup in iter_csv_rows(zf):
                                 copy.write_row(tup)
                                 year_rows += 1
                 conn.commit()
-                print(f"  {year}: copied {year_rows:,} rows into {TABLE_NAME}")
+                print(f"  {year}: copied {year_rows:,} rows into {tname}")
                 total_copied += year_rows
             finally:
                 if tmp is not None and tmp.exists() and not args.keep_zip:
