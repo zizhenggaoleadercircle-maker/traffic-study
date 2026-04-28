@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Load full-year trip ZIPs from Toronto Open Data (Private Transportation Companies –
 Summary and Trip Data) into PostgreSQL.
@@ -15,7 +14,7 @@ Flow:
   3. COPY rows into pts_trips_yearly_{year} (truncates those tables for requested years)
 
 If you previously used the unified table pts_trips_yearly, run once:
-  python migrate_pts_trips_yearly_split.py
+  traffic-migrate-yearly-split
 
 CKAN API: https://docs.ckan.org/en/latest/api/
 """
@@ -34,14 +33,9 @@ from typing import Any, Iterator
 
 from dotenv import load_dotenv
 
-load_dotenv()
+from traffic_study.parsers import parse_date, parse_int, parse_numeric, parse_timestamp
 
-from import_summary_trip_data import (
-    parse_date,
-    parse_int,
-    parse_numeric,
-    parse_timestamp,
-)
+load_dotenv()
 
 BASE_URL_DEFAULT = "https://ckan0.cf.opendata.inter.prod-toronto.ca"
 PACKAGE_ID = "private-transportation-companies-summary-and-trip-data"
@@ -51,7 +45,6 @@ def table_name_for_year(year: int) -> str:
     return f"pts_trips_yearly_{year}"
 
 
-# trips_YYYYMM.csv from published ZIPs (verified 2025-01).
 EXPECTED_COLUMNS = frozenset(
     {
         "dt",

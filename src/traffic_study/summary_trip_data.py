@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Load Toronto Open Data CKAN package "Private Transportation Companies - Summary and Trip Data"
 into PostgreSQL.
@@ -16,13 +15,13 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import sys
-from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
-from typing import Any, Iterator, List
+from typing import Any, List
 
 from dotenv import load_dotenv
+
+from traffic_study.datastore import iter_datastore_batches
+from traffic_study.parsers import parse_date, parse_int, parse_numeric, parse_timestamp
 
 load_dotenv()
 
@@ -31,41 +30,6 @@ PACKAGE_ID = "private-transportation-companies-summary-and-trip-data"
 
 TABLE_TRIPS = "pts_trips_sample"
 TABLE_SUMMARY = "pts_summary_stats"
-
-
-def parse_timestamp(val: Any) -> datetime | None:
-    if val is None or val == "":
-        return None
-    s = str(val).strip()
-    m = re.match(r"^(.+?)([+-]\d{2})$", s)
-    if m and not re.search(r"[+-]\d{2}:\d{2}$", s):
-        s = m.group(1) + m.group(2) + ":00"
-    return datetime.fromisoformat(s)
-
-
-def parse_date(val: Any) -> date | None:
-    if val is None or val == "":
-        return None
-    s = str(val).strip()
-    if len(s) >= 10 and s[4] == "-" and s[7] == "-":
-        return date.fromisoformat(s[:10])
-    d = datetime.fromisoformat(s)
-    return d.date()
-
-
-def parse_int(val: Any) -> int | None:
-    if val is None or val == "":
-        return None
-    return int(str(val).strip())
-
-
-def parse_numeric(val: Any) -> Decimal | None:
-    if val is None or val == "":
-        return None
-    try:
-        return Decimal(str(val).strip())
-    except InvalidOperation:
-        return None
 
 
 def row_trips(rec: dict[str, Any]) -> tuple[Any, ...]:
@@ -137,36 +101,6 @@ def get_datastore_resource_ids(base_url: str, session: Any) -> dict[str, str]:
         if name not in out:
             raise RuntimeError(f"Datastore resource {name!r} not found in package.")
     return out
-
-
-def iter_datastore_batches(
-    base_url: str,
-    resource_id: str,
-    session: Any,
-    batch_size: int,
-) -> Iterator[List[dict[str, Any]]]:
-    offset = 0
-    while True:
-        r = session.get(
-            f"{base_url.rstrip('/')}/api/3/action/datastore_search",
-            params={
-                "resource_id": resource_id,
-                "limit": batch_size,
-                "offset": offset,
-            },
-            timeout=120,
-        )
-        r.raise_for_status()
-        payload = r.json()
-        if not payload.get("success"):
-            raise RuntimeError(f"datastore_search failed: {payload}")
-        records: List[dict[str, Any]] = payload["result"]["records"]
-        if not records:
-            break
-        yield records
-        offset += len(records)
-        if len(records) < batch_size:
-            break
 
 
 DDL_TRIPS = f"""
