@@ -8,60 +8,71 @@ Remote: [https://github.com/zizhenggaoleadercircle-maker/traffic-study](https://
 
 `.env` and `.venv` are not committed; copy `.env.example` to `.env` after cloning.
 
-## Quick commands
+## Repository layout
 
-```bash
-cd /path/to/traffic
-source .venv/bin/activate
-pip install -r requirements.txt
-
-python connect_db.py
-
-# CKAN datastore samples (Toronto Open Data)
-python import_operating_hours.py
-python import_operating_hours.py --dry-run
-
-python import_summary_trip_data.py
-python import_summary_trip_data.py --dry-run
-
-# Full-year trip ZIPs (one table per year: pts_trips_yearly_2024, pts_trips_yearly_2025, ...)
-python import_trips_yearly_zip.py
-python import_trips_yearly_zip.py --dry-run
-
-# One-time: migrate legacy unified pts_trips_yearly -> pts_trips_yearly_{year} (if upgrading)
-python migrate_pts_trips_yearly_split.py
-```
-
-## Project layout
+Top-level layout follows a standard open-source template: **source** in `src/`, **documentation** in `doc/`, **dependencies** listed under `dep/`, **tests** in `test/`, **resources** in `res/`, **samples** in `samples/`, **tools** in `tools/`, optional **config** in `.config/`, and build output in `build/` (gitignored).
 
 | Path | Purpose |
 |------|---------|
-| [requirements.txt](../requirements.txt) | Python dependencies |
-| [.env.example](../.env.example) | Template for `DATABASE_URL` (safe to commit) |
-| [.env](../.env) | Real secrets; gitignored |
-| [.gitignore](../.gitignore) | Ignores `.env`, `.venv`, `__pycache__` |
-| [connect_db.py](../connect_db.py) | Smoke test: PostgreSQL connectivity |
-| [import_operating_hours.py](../import_operating_hours.py) | CKAN datastore: vehicle operating hours sample to `vehicle_operating_hours` |
-| [import_summary_trip_data.py](../import_summary_trip_data.py) | CKAN datastore: trips sample + summary stats to `pts_trips_sample`, `pts_summary_stats` |
-| [import_trips_yearly_zip.py](../import_trips_yearly_zip.py) | Download yearly `trips_YYYY.zip`, load into `pts_trips_yearly_{year}` |
-| [migrate_pts_trips_yearly_split.py](../migrate_pts_trips_yearly_split.py) | One-time: split old `pts_trips_yearly` (with `source_year`) into per-year tables, drop legacy table |
-| [docs/walkthrough.md](walkthrough.md) | This document |
+| [pyproject.toml](../pyproject.toml) | Package `traffic-study`, dependencies, console entry points |
+| [dep/requirements.txt](../dep/requirements.txt) | Runtime deps (mirror of `pyproject.toml`); use with `pip install -r dep/requirements.txt` |
+| [requirements.txt](../requirements.txt) | Includes `dep/requirements.txt` for one-line `pip install -r requirements.txt` |
+| [src/traffic_study/](../src/traffic_study/) | Installable package: loaders, shared `parsers`, `datastore` helpers |
+| [doc/walkthrough.md](walkthrough.md) | This document |
+| [tests/](../tests/) | Unit tests (`python -m unittest discover -s tests -t .`; plural avoids clashing with stdlib `test`) |
+| [samples/](../samples/) | Optional usage examples (empty placeholder) |
+| [res/](../res/) | Static resources / assets (placeholder) |
+| [tools/](../tools/) | Helper scripts not shipped as the package |
+| [.config/](../.config/) | Versioned non-secret configuration notes |
+| `build/` | Local build artifacts (ignored by git) |
 
-## Dependencies ([requirements.txt](../requirements.txt))
+**Module map**
+
+| Module | Role |
+|--------|------|
+| [traffic_study/parsers.py](../src/traffic_study/parsers.py) | Shared CKAN/CSV value parsing (timestamps, numerics, booleans) |
+| [traffic_study/datastore.py](../src/traffic_study/datastore.py) | `datastore_search` pagination |
+| [traffic_study/connect.py](../src/traffic_study/connect.py) | DB smoke test |
+| [traffic_study/operating_hours.py](../src/traffic_study/operating_hours.py) | CKAN vehicle operating hours sample |
+| [traffic_study/summary_trip_data.py](../src/traffic_study/summary_trip_data.py) | CKAN trips sample + summary stats |
+| [traffic_study/trips_yearly_zip.py](../src/traffic_study/trips_yearly_zip.py) | Yearly `trips_YYYY.zip` into `pts_trips_yearly_{year}` |
+| [traffic_study/migrate_yearly_split.py](../src/traffic_study/migrate_yearly_split.py) | One-time split of legacy `pts_trips_yearly` |
+
+## Quick setup and commands
+
+```bash
+cd /path/to/traffic
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+# Test database
+traffic-connect
+
+# CKAN datastore samples (Toronto Open Data)
+traffic-import-operating-hours
+traffic-import-operating-hours --dry-run
+
+traffic-import-summary-trip-data
+traffic-import-summary-trip-data --dry-run
+
+# Full-year trip ZIPs (one table per year: pts_trips_yearly_2024, pts_trips_yearly_2025, ...)
+traffic-import-trips-yearly-zip
+traffic-import-trips-yearly-zip --dry-run
+
+# One-time: migrate legacy unified pts_trips_yearly -> pts_trips_yearly_{year} (if upgrading)
+traffic-migrate-yearly-split
+```
+
+Same entry points as `python -m traffic_study.connect`, `python -m traffic_study.operating_hours`, and so on.
+
+## Dependencies
+
+Declared in [pyproject.toml](../pyproject.toml) and mirrored in [dep/requirements.txt](../dep/requirements.txt):
 
 - **psycopg[binary]** — PostgreSQL driver.
 - **python-dotenv** — Load `.env` into the process environment.
 - **requests** — HTTP client for CKAN API calls.
-
-## Virtual environment
-
-Create once per machine:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
 
 ## Environment variables
 
@@ -76,10 +87,10 @@ pip install -r requirements.txt
 ### `CKAN_BASE_URL` (optional)
 
 - Default: `https://ckan0.cf.opendata.inter.prod-toronto.ca`
-- When set, overrides the default Toronto CKAN API base for scripts that call `package_show` / `datastore_search` (`import_operating_hours.py`, `import_summary_trip_data.py`, and `import_trips_yearly_zip.py` for URL resolution).
+- When set, overrides the default Toronto CKAN API base for loaders that call `package_show` / `datastore_search` (`traffic-import-operating-hours`, `traffic-import-summary-trip-data`, and `traffic-import-trips-yearly-zip` for URL resolution).
 - Same as passing `--base-url` on those CLIs.
 
-## [connect_db.py](../connect_db.py)
+## `traffic-connect` ([connect.py](../src/traffic_study/connect.py))
 
 **Goal:** Verify Python can connect using `DATABASE_URL`.
 
@@ -88,7 +99,7 @@ pip install -r requirements.txt
 3. Import `psycopg` (helpful error if dependencies are not installed).
 4. `SELECT version();` and print the result.
 
-## [import_operating_hours.py](../import_operating_hours.py)
+## `traffic-import-operating-hours` ([operating_hours.py](../src/traffic_study/operating_hours.py))
 
 **Goal:** Load Toronto Open Data CKAN package *Private Transportation Companies – Vehicle Operating Data* into PostgreSQL.
 
@@ -114,9 +125,9 @@ pip install -r requirements.txt
 
 **Destination table:** `vehicle_operating_hours` — primary key `ckan_id` (CKAN field `_id`).
 
-Implementation details (parsing `hr` timestamps, `t`/`f` booleans, etc.) are documented in comments inside the script.
+Implementation details (parsing `hr` timestamps, `t`/`f` booleans, etc.) live in [parsers.py](../src/traffic_study/parsers.py) and script comments.
 
-## [import_summary_trip_data.py](../import_summary_trip_data.py)
+## `traffic-import-summary-trip-data` ([summary_trip_data.py](../src/traffic_study/summary_trip_data.py))
 
 **Goal:** Load CKAN package *Private Transportation Companies – Summary and Trip Data* (`private-transportation-companies-summary-and-trip-data`).
 
@@ -128,11 +139,11 @@ Implementation details (parsing `hr` timestamps, `t`/`f` booleans, etc.) are doc
 
 **Destination tables:** `pts_trips_sample`, `pts_summary_stats` (primary key `ckan_id` from CKAN `_id`).
 
-## [import_trips_yearly_zip.py](../import_trips_yearly_zip.py)
+## `traffic-import-trips-yearly-zip` ([trips_yearly_zip.py](../src/traffic_study/trips_yearly_zip.py))
 
 **Goal:** Load full-year **ZIP** releases (`trips_YYYY.zip` on `opendata.toronto.ca`) into **one table per calendar year** (no `source_year` column; the year is in the table name).
 
-**Data source:** Resource URL from CKAN `package_show` (same package as `import_summary_trip_data.py`); each ZIP contains monthly `trips_YYYYMM.csv` files with the same columns as the CKAN `trips_sample` datastore (no `_id`).
+**Data source:** Resource URL from CKAN `package_show` (same package as summary/trip loader); each ZIP contains monthly `trips_YYYYMM.csv` files with the same columns as the CKAN `trips_sample` datastore (no `_id`).
 
 **Flow:** Download ZIP to a temp file, stream each CSV, validate headers, `COPY` into `pts_trips_yearly_{year}`. For each requested year, the script `TRUNCATE`s that year’s table before loading.
 
@@ -140,7 +151,7 @@ Implementation details (parsing `hr` timestamps, `t`/`f` booleans, etc.) are doc
 
 **Destination tables:** `pts_trips_yearly_2024`, `pts_trips_yearly_2025`, etc. (primary key `id` / `BIGSERIAL`).
 
-## [migrate_pts_trips_yearly_split.py](../migrate_pts_trips_yearly_split.py)
+## `traffic-migrate-yearly-split` ([migrate_yearly_split.py](../src/traffic_study/migrate_yearly_split.py))
 
 **Goal:** One-time migration if you still have a legacy unified table `pts_trips_yearly` with a `source_year` column: create `pts_trips_yearly_{year}` using the same layout as the current importer, `INSERT ... SELECT` by `source_year`, then `DROP` the old table. If `pts_trips_yearly` is missing, the script exits with no changes.
 
@@ -148,10 +159,10 @@ Implementation details (parsing `hr` timestamps, `t`/`f` booleans, etc.) are doc
 
 | Table | Loader | Notes |
 |------|--------|--------|
-| `vehicle_operating_hours` | `import_operating_hours.py` | CKAN `_id` as `ckan_id` |
-| `pts_trips_sample` | `import_summary_trip_data.py` | Small CKAN trips sample |
-| `pts_summary_stats` | `import_summary_trip_data.py` | Daily summary metrics |
-| `pts_trips_yearly_YYYY` | `import_trips_yearly_zip.py` | Full-year ZIP data; one table per year |
+| `vehicle_operating_hours` | `traffic-import-operating-hours` | CKAN `_id` as `ckan_id` |
+| `pts_trips_sample` | `traffic-import-summary-trip-data` | Small CKAN trips sample |
+| `pts_summary_stats` | `traffic-import-summary-trip-data` | Daily summary metrics |
+| `pts_trips_yearly_YYYY` | `traffic-import-trips-yearly-zip` | Full-year ZIP data; one table per year |
 
 All live in the database named in `DATABASE_URL` (usually schema `public`).
 
@@ -168,3 +179,5 @@ All live in the database named in `DATABASE_URL` (usually schema `public`).
 | 2026-04-17 | Initial walkthrough: `connect_db.py`, `import_operating_hours.py`, `.env.example`, CKAN sample load. |
 | 2026-04-17 | Pushed to GitHub `traffic-study`; merged remote `README.md`; documented repo URL here. |
 | 2026-04-28 | Documented `import_summary_trip_data.py`, `import_trips_yearly_zip.py`, `migrate_pts_trips_yearly_split.py`, per-year `pts_trips_yearly_YYYY` tables, and `CKAN_BASE_URL` for all CKAN-related scripts. |
+| 2026-04-28 | Restructured as `src/traffic_study` package, `pyproject.toml`, console commands (`traffic-connect`, etc.). |
+| 2026-04-28 | Repository layout aligned with template: `doc/`, `dep/`, `tests/`, `res/`, `samples/`, `tools/`, `.config/`. |

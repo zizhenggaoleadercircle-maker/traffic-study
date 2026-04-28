@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traffic-study"
+version = "0.1.0"
+description = "Toronto Open Data CKAN loaders into PostgreSQL"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "psycopg[binary]>=3.2",
+    "python-dotenv>=1.0",
+    "requests>=2.28",
+]
+
+[project.scripts]
+traffic-connect = "traffic_study.connect:main"
+traffic-import-operating-hours = "traffic_study.operating_hours:main"
+traffic-import-summary-trip-data = "traffic_study.summary_trip_data:main"
+traffic-import-trips-yearly-zip = "traffic_study.trips_yearly_zip:main"
+traffic-migrate-yearly-split = "traffic_study.migrate_yearly_split:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

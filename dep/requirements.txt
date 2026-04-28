@@ -1,0 +1,6 @@
+# Same runtime dependencies as [pyproject.toml](../pyproject.toml).
+# Install the package (recommended): pip install -e .
+# Or flat install only: pip install -r dep/requirements.txt
+psycopg[binary]>=3.2
+python-dotenv>=1.0
+requests>=2.28

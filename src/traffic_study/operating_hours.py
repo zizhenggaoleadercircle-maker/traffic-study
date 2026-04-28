@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Load Toronto Open Data CKAN package "Private Transportation Companies – Vehicle Operating Data"
 into PostgreSQL.
@@ -8,7 +7,7 @@ are multi-GB ZIPs; load those separately if needed (same column layout as the sa
 
 CKAN API: https://docs.ckan.org/en/latest/api/
 
-High-level steps this script performs:
+High-level steps:
   1. Call package_show to find the resource id for "operating_hours_sample" (datastore).
   2. Page through datastore_search until all rows are retrieved.
   3. CREATE TABLE + indexes if missing; TRUNCATE (unless --no-truncate); INSERT batches.
@@ -18,68 +17,22 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import sys
-from datetime import datetime
-from decimal import Decimal, InvalidOperation
-from typing import Any, Iterator, List
+from typing import Any, List
 
 from dotenv import load_dotenv
 
+from traffic_study.datastore import iter_datastore_batches
+from traffic_study.parsers import parse_bool_tf, parse_int, parse_numeric, parse_timestamp
+
 load_dotenv()
 
-# Toronto CKAN base URL (override with env CKAN_BASE_URL or --base-url).
 BASE_URL_DEFAULT = "https://ckan0.cf.opendata.inter.prod-toronto.ca"
-# "Package" name in the dataset URL / API (not the human title).
 PACKAGE_ID = "private-transportation-companies-vehicle-operating-data"
-# Destination table in PostgreSQL.
 TABLE_NAME = "vehicle_operating_hours"
 
 
-def parse_timestamp(val: Any) -> datetime | None:
-    """CKAN datastore returns timestamps as text; normalize for datetime.fromisoformat."""
-    if val is None or val == "":
-        return None
-    s = str(val).strip()
-    # CKAN may return e.g. "2025-09-01 00:00:00-04" (hour offset without minutes).
-    # Python expects "-04:00"; append ":00" to the offset when it is only two digits.
-    m = re.match(r"^(.+?)([+-]\d{2})$", s)
-    if m and not re.search(r"[+-]\d{2}:\d{2}$", s):
-        s = m.group(1) + m.group(2) + ":00"
-    return datetime.fromisoformat(s)
-
-
-def parse_int(val: Any) -> int | None:
-    """Integer columns arrive as strings from the JSON API."""
-    if val is None or val == "":
-        return None
-    return int(str(val).strip())
-
-
-def parse_numeric(val: Any) -> Decimal | None:
-    """Use Decimal for money and fractional trip counts to avoid float drift."""
-    if val is None or val == "":
-        return None
-    try:
-        return Decimal(str(val).strip())
-    except InvalidOperation:
-        return None
-
-
-def parse_bool_tf(val: Any) -> bool | None:
-    """Postgres/CKAN often uses 't' / 'f' for booleans in text form."""
-    if val is None or val == "":
-        return None
-    v = str(val).strip().lower()
-    if v in ("t", "true", "1", "yes"):
-        return True
-    if v in ("f", "false", "0", "no"):
-        return False
-    return None
-
-
 def row_tuple(rec: dict[str, Any]) -> tuple[Any, ...]:
-    """Map one CKAN record dict to a tuple matching INSERT column order."""
     return (
         rec["_id"],
         rec["vehid"],
@@ -105,10 +58,6 @@ def row_tuple(rec: dict[str, Any]) -> tuple[Any, ...]:
 
 
 def get_datastore_resource_id(base_url: str, session: Any) -> str:
-    """
-    package_show returns metadata for the dataset, including every file ("resource").
-    We need the UUID of the resource that has datastore_active and name operating_hours_sample.
-    """
     url = f"{base_url.rstrip('/')}/api/3/action/package_show"
     r = session.get(url, params={"id": PACKAGE_ID}, timeout=120)
     r.raise_for_status()
@@ -121,41 +70,6 @@ def get_datastore_resource_id(base_url: str, session: Any) -> str:
     raise RuntimeError("No datastore resource operating_hours_sample found in package.")
 
 
-def iter_datastore_batches(
-    base_url: str,
-    resource_id: str,
-    session: Any,
-    batch_size: int,
-) -> Iterator[List[dict[str, Any]]]:
-    """
-    CKAN datastore_search returns up to `limit` rows; use offset to page until a short page.
-    Yields each page as a list of dicts (column name -> value).
-    """
-    offset = 0
-    while True:
-        r = session.get(
-            f"{base_url.rstrip('/')}/api/3/action/datastore_search",
-            params={
-                "resource_id": resource_id,
-                "limit": batch_size,
-                "offset": offset,
-            },
-            timeout=120,
-        )
-        r.raise_for_status()
-        payload = r.json()
-        if not payload.get("success"):
-            raise RuntimeError(f"datastore_search failed: {payload}")
-        records: List[dict[str, Any]] = payload["result"]["records"]
-        if not records:
-            break
-        yield records
-        offset += len(records)
-        if len(records) < batch_size:
-            break
-
-
-# --- SQL DDL: table matches CKAN field names semantically; ckan_id stores CKAN _id. ---
 DDL_TABLE = f"""
 CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
     ckan_id INTEGER PRIMARY KEY,
@@ -185,7 +99,6 @@ CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
 DDL_INDEX_HOUR = f"CREATE INDEX IF NOT EXISTS idx_{TABLE_NAME}_hour ON {TABLE_NAME} (hour)"
 DDL_INDEX_VEHID = f"CREATE INDEX IF NOT EXISTS idx_{TABLE_NAME}_vehid ON {TABLE_NAME} (vehid)"
 
-# Parameterized INSERT: %s placeholders filled by psycopg from row_tuple().
 INSERT_SQL = f"""
 INSERT INTO {TABLE_NAME} (
     ckan_id, vehid, hour,
@@ -205,7 +118,6 @@ INSERT INTO {TABLE_NAME} (
 
 
 def main() -> None:
-    # Imported inside main so --help works even if requests is missing until install.
     import requests
 
     parser = argparse.ArgumentParser(description="Load CKAN operating hours sample into PostgreSQL.")
@@ -238,7 +150,6 @@ def main() -> None:
     resource_id = get_datastore_resource_id(args.base_url, session)
     print(f"Datastore resource id: {resource_id}")
 
-    # Dry run: only hit CKAN; useful to check network and row count without DB credentials.
     if args.dry_run:
         first: List[dict[str, Any]] | None = None
         total = 0
@@ -253,16 +164,13 @@ def main() -> None:
 
     inserted = 0
     with psycopg.connect(db_url) as conn:
-        # Ensure table exists before TRUNCATE/INSERT.
         with conn.cursor() as cur:
             cur.execute(DDL_TABLE)
             cur.execute(DDL_INDEX_HOUR)
             cur.execute(DDL_INDEX_VEHID)
-        # Default: full reload. Skip truncate only if you know you are not duplicating ckan_id.
         if not args.no_truncate:
             with conn.cursor() as cur:
                 cur.execute(f"TRUNCATE TABLE {TABLE_NAME}")
-        # Stream pages from CKAN and insert each page (keeps memory bounded for large datasets).
         for batch in iter_datastore_batches(args.base_url, resource_id, session, args.batch_size):
             with conn.cursor() as cur:
                 cur.executemany(INSERT_SQL, [row_tuple(rec) for rec in batch])

@@ -1,11 +1,6 @@
-#!/usr/bin/env python3
 """
 One-time migration: copy rows from unified pts_trips_yearly (source_year column)
 into pts_trips_yearly_{year}, then drop the old table.
-
-Safe to run if:
-  - pts_trips_yearly exists and per-year tables are empty or missing; or
-  - you want to consolidate legacy data before using import_trips_yearly_zip.py only.
 
 If pts_trips_yearly does not exist, exits with a short message (nothing to do).
 
@@ -19,9 +14,9 @@ import sys
 
 from dotenv import load_dotenv
 
-load_dotenv()
+from traffic_study.trips_yearly_zip import ddl_indexes, ddl_year_table, table_name_for_year
 
-from import_trips_yearly_zip import ddl_indexes, ddl_year_table, table_name_for_year
+load_dotenv()
 
 
 def main() -> None:
@@ -91,7 +86,7 @@ def main() -> None:
             cur.execute(f"DROP TABLE {old}")
         conn.commit()
 
-    print(f"Dropped unified table {old!r}. Use import_trips_yearly_zip.py for reloads.")
+    print(f"Dropped unified table {old!r}. Use traffic-import-trips-yearly-zip for reloads.")
 
 
 if __name__ == "__main__":
