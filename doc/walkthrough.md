@@ -8,6 +8,28 @@ Remote: [https://github.com/zizhenggaoleadercircle-maker/traffic-study](https://
 
 `.env` and `.venv` are not committed; copy `.env.example` to `.env` after cloning.
 
+## Project progress
+
+High-level sequence of what this repository has built toward so far (tooling, schema, packaging, documentation, and analysis). GitHub renders Mermaid when you view this file on the remote.
+
+```mermaid
+flowchart TD
+  A([traffic-study / Toronto Open Data work]) --> B[Initial Postgres tooling and CKAN import]
+  B --> C[Per-year trip tables: pts_trips_yearly_YYYY + migration helper]
+  C --> D[Standard Python package: src/traffic_study + CLI commands]
+  D --> E[Documentation: walkthrough, README, loader comments]
+  E --> F[Organize artifacts: RidehailingEmptyTrips.pdf under doc/]
+  F --> G[Analysis: analysis/trips_yearly.ipynb — DB via SQLAlchemy, plots]
+  G --> H[README refresh: prerequisites, layout table, notebooks section]
+  H --> I[Commit and push to GitHub on branch 2026-04-27-zfyd]
+
+  J[Optional / local only: Cursor canvases beside chat] -.->|not in this repo by default| I
+
+  style J stroke-dasharray: 5 5
+```
+
+The dashed node marks **Cursor canvases** (`.canvas.tsx` files under your Cursor project’s `canvases/` directory). They are not tracked in this repository unless you add copies here.
+
 ## Repository layout
 
 Top-level layout follows a standard open-source template: **source** in `src/`, **documentation** in `doc/`, **dependencies** listed under `dep/`, **tests** in `test/`, **resources** in `res/`, **samples** in `samples/`, **tools** in `tools/`, optional **config** in `.config/`, and build output in `build/` (gitignored).
@@ -181,3 +203,4 @@ All live in the database named in `DATABASE_URL` (usually schema `public`).
 | 2026-04-28 | Documented `import_summary_trip_data.py`, `import_trips_yearly_zip.py`, `migrate_pts_trips_yearly_split.py`, per-year `pts_trips_yearly_YYYY` tables, and `CKAN_BASE_URL` for all CKAN-related scripts. |
 | 2026-04-28 | Restructured as `src/traffic_study` package, `pyproject.toml`, console commands (`traffic-connect`, etc.). |
 | 2026-04-28 | Repository layout aligned with template: `doc/`, `dep/`, `tests/`, `res/`, `samples/`, `tools/`, `.config/`. |
+| 2026-05-14 | Added **Project progress** Mermaid flowchart (repo history, analysis notebook, README, GitHub branch; note on Cursor canvases). |
