@@ -42,7 +42,7 @@ Copy [.env.example](.env.example) to `.env` in the project root and set **`DATAB
 | Directory | Purpose |
 |-----------|---------|
 | [src/traffic_study/](src/traffic_study/) | Installable Python package: loaders, [parsers](src/traffic_study/parsers.py), [datastore](src/traffic_study/datastore.py) helpers |
-| [doc/](doc/) | Documentation: [walkthrough](doc/walkthrough.md), reference PDF [RidehailingEmptyTrips.pdf](doc/RidehailingEmptyTrips.pdf) |
+| [doc/](doc/) | Documentation: [walkthrough](doc/walkthrough.md), [Vision Zero landscape](doc/vision-zero-landscape.md), reference PDF [RidehailingEmptyTrips.pdf](doc/RidehailingEmptyTrips.pdf) |
 | [analysis/](analysis/) | Jupyter notebooks and ad hoc analysis (e.g. [trips_yearly.ipynb](analysis/trips_yearly.ipynb)) |
 | [dep/](dep/) | Dependency listings (`requirements.txt` mirror of [pyproject.toml](pyproject.toml)) |
 | [tests/](tests/) | Unit tests |

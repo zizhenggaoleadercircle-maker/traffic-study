@@ -22,6 +22,7 @@ flowchart TD
   F --> G[Analysis: analysis/trips_yearly.ipynb — DB via SQLAlchemy, plots]
   G --> H[README refresh: prerequisites, layout table, notebooks section]
   H --> I[Commit and push to GitHub on branch 2026-04-27-zfyd]
+  I --> K[Project framing: Vision Zero landscape scan in doc/vision-zero-landscape.md]
 
   J[Optional / local only: Cursor canvases beside chat] -.->|not in this repo by default| I
 
@@ -41,6 +42,8 @@ Top-level layout follows a standard open-source template: **source** in `src/`, 
 | [requirements.txt](../requirements.txt) | Includes `dep/requirements.txt` for one-line `pip install -r requirements.txt` |
 | [src/traffic_study/](../src/traffic_study/) | Installable package: loaders, shared `parsers`, `datastore` helpers |
 | [doc/walkthrough.md](walkthrough.md) | This document |
+| [doc/vision-zero-landscape.md](vision-zero-landscape.md) | Vision Zero and traffic safety organizations: priorities, frameworks, and how this project maps to them |
+| [doc/RidehailingEmptyTrips.pdf](RidehailingEmptyTrips.pdf) | Reference PDF on ride-hailing empty trips |
 | [tests/](../tests/) | Unit tests (`python -m unittest discover -s tests -t .`; plural avoids clashing with stdlib `test`) |
 | [samples/](../samples/) | Optional usage examples (empty placeholder) |
 | [res/](../res/) | Static resources / assets (placeholder) |
@@ -188,6 +191,21 @@ Implementation details (parsing `hr` timestamps, `t`/`f` booleans, etc.) live in
 
 All live in the database named in `DATABASE_URL` (usually schema `public`).
 
+## Project framing: Vision Zero alignment
+
+The downstream goal of this project is to support Toronto's Vision Zero Road Safety Plan by relating ride-hailing trip patterns to pedestrian and cyclist Killed or Seriously Injured (KSI) outcomes, then exposing those insights through an Impact Visualizer and a segment-level Safety Predictor.
+
+See [doc/vision-zero-landscape.md](vision-zero-landscape.md) for:
+
+- Toronto Vision Zero 2.0 seven emphasis areas and 2026 Council actions
+- Safe System Approach pillars (FHWA, USDOT NRSS, WHO Decade of Action 2021-2030)
+- Vision Zero Network, NACTO, Towards Zero Foundation, and iRAP priorities
+- High Injury Network (HIN) methodology used by US Vision Zero cities
+- Ride-hailing / TNC curb-conflict and PUDO safety research
+- Cross-organization synthesis table and the project vocabulary to use in dashboards, README copy, and Council Briefing PDFs (for example KSI, High Injury Network, vulnerable road users, exposure-normalized, curb conflict)
+
+Loaders in `src/traffic_study/` provide the data foundation; the landscape document provides the framing and target language for downstream metrics, choropleths, the segment classifier, and the briefing-note export.
+
 ## Troubleshooting
 
 - **Connection refused / wrong port:** Compare DBeaver host and port with `DATABASE_URL`.
@@ -204,3 +222,4 @@ All live in the database named in `DATABASE_URL` (usually schema `public`).
 | 2026-04-28 | Restructured as `src/traffic_study` package, `pyproject.toml`, console commands (`traffic-connect`, etc.). |
 | 2026-04-28 | Repository layout aligned with template: `doc/`, `dep/`, `tests/`, `res/`, `samples/`, `tools/`, `.config/`. |
 | 2026-05-14 | Added **Project progress** Mermaid flowchart (repo history, analysis notebook, README, GitHub branch; note on Cursor canvases). |
+| 2026-05-21 | Added `doc/vision-zero-landscape.md` (Vision Zero and traffic safety landscape scan); linked it from the repository layout, the new **Project framing** section, the project-progress flowchart, and `doc/README.md`. |
