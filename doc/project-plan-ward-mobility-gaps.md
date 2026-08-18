@@ -71,7 +71,8 @@ The award entry is **not** “we loaded data into Postgres.” The award entry i
 1. Which ward pairs have the highest ride-hail OD volumes (within-ward and between-ward)?
 2. Do high ride-hail OD pairs also have high transit friction (long trips, many transfers, weak night service)?
 3. When transit looks strong but ride-hail remains high, what other factors show up (income, car ownership, nightlife hours, reliability)?
-4. Can we produce ward-level briefs that are useful to residents, civic groups, and councillor offices?
+4. How are those patterns **changing over years** (growth, seasonality, time-of-day mix)?
+5. Can we produce ward-level briefs that are useful to residents, civic groups, and councillor offices?
 
 ---
 
@@ -97,6 +98,70 @@ Primary eligibility requirement: use at least one dataset from [open.toronto.ca]
 
 
 
+## Multi-year / time-series analysis
+
+The repo already loads PTC trips into per-year tables (`pts_trips_yearly_2024`, `pts_trips_yearly_2025`, …) with `dt`, `pickup_hr`, `pickup_ward`, `dropoff_ward`, and `trips_total`. Multi-year data lets us ask not only where gaps are, but whether they are **worsening**.
+
+### Panel table (required foundation)
+
+Union years into one OD time series (example grain: daily):
+
+- Keys: `dt`, `origin_ward`, `dest_ward` (plus derived `year`, week, month)
+- Metrics: `SUM(trips_total)`, optional averages for wait / duration / distance
+- Filter out non-Toronto / placeholder wards consistently across years
+
+Suggested materialized object: `ward_od_daily` (then roll up to weekly / monthly as needed).
+
+| Grain | Use for |
+|-------|---------|
+| Daily | Shocks, events, weather |
+| Weekly | Smooth noise for corridor charts |
+| Monthly | Year-over-year growth and seasonality |
+| Hour-of-day x weekday | Night vs peak “gap” stories |
+| Year | Rankings and simple before/after |
+
+### Metrics to track per ward pair over time
+
+- Trip volume and share of citywide trips
+- Growth: YoY % change, or index a base year to 100
+- Within-ward vs between-ward mix
+- Time-of-day mix (% night / AM peak / PM peak)
+- PTC service proxies: wait, duration, distance averages when present
+
+Core time-series question: do **high transit-friction** corridors **grow faster** than well-served ones?
+
+### Analysis patterns for the public product
+
+1. Rank stability — top OD pairs by year; who entered or left the top set
+2. Growth leaders — fastest-growing edges (absolute and %)
+3. Seasonality — same month across years
+4. Diurnal shift — is growth mostly late-night (weaker transit) or all-day
+5. Optional association checks — growth vs transit friction (labeled carefully; not causation)
+6. Policy/context windows — note major construction or VFH policy periods without overclaiming
+
+### Transit friction caveat
+
+PTC OD is a true multi-year series. GTFS-based transit scores are **not**, unless we version schedule snapshots (feeds change often).
+
+- **v1:** one GTFS snapshot (static friction) + moving PTC volumes over years
+- **v2 (stretch):** yearly or seasonal GTFS archives so friction also becomes a time series
+
+### Narrative value
+
+| Cross-section (one year) | Time series (multiple years) |
+|--------------------------|------------------------------|
+| Where are the gaps? | Are gaps worsening? |
+| Which corridors are hot? | Which are accelerating? |
+| Link to 2030 ZEV | Show demand growth electrification alone will not absorb |
+
+### Methods (keep lightweight for v1)
+
+Line charts and small multiples for selected corridors; month x hour heatmaps; simple indexes and YoY tables. Heavy forecasting models are optional stretch, not required for the award entry.
+
+---
+
+
+
 ## Who we need (roles)
 
 You do not need to fill every role. Small teams can cover multiple hats.
@@ -105,9 +170,9 @@ You do not need to fill every role. Small teams can cover multiple hats.
 | Role                | Responsibilities                                        | Skills                                     |
 | ------------------- | ------------------------------------------------------- | ------------------------------------------ |
 | Project lead        | Scope, timeline, award submission, stakeholder outreach | Organization, writing                      |
-| Data / backend      | PTC loads, ward OD tables, Postgres, data quality       | Python, SQL, pandas                        |
+| Data / backend      | PTC loads, multi-year `ward_od_*` panels, Postgres      | Python, SQL, pandas                        |
 | Transit analyst     | GTFS processing, transit friction scores per ward pair  | GTFS, routing or network analysis          |
-| Analysis / research | Stats, corridor case studies, careful interpretation    | Urban / transport analysis                 |
+| Analysis / research | Stats, time series, corridor case studies               | Urban / transport analysis                 |
 | Frontend / viz      | Public map, charts, accessible UI                       | Web map (e.g. MapLibre/Leaflet), dashboard |
 | Design / comms      | Plain-language stories, visuals, outreach materials     | Writing, design                            |
 | Community liaison   | Feedback from residents, civic tech, councillor staff   | Facilitation, outreach                     |
@@ -124,7 +189,7 @@ You do not need to fill every role. Small teams can cover multiple hats.
 
 | Phase              | Window                      | Outcomes                                                                                                                                 |
 | ------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Foundations     | Now → +3 weeks              | Confirm team; materialize `ward_od_daily` from existing PTC tables; join City Wards; publish a short public README for the award project |
+| 1. Foundations     | Now → +3 weeks              | Confirm team; materialize multi-year `ward_od_daily` from PTC yearly tables; join City Wards; publish a short public README for the award project |
 | 2. Transit layer   | Weeks 4–7                   | GTFS-based transit scores for top OD pairs; draft methodology note                                                                       |
 | 3. Insights        | Weeks 8–10                  | First 3 corridor case studies; draft maps/charts; internal review                                                                        |
 | 4. Public product  | Weeks 11–14                 | Public dashboard or illustrated report live on the web; open GitHub docs                                                                 |
@@ -258,5 +323,6 @@ New contributors should skim these before picking a workstream. They cover conge
 | 2026-08-17 | Initial recruiting / award project plan drafted from traffic-study discussion |
 | 2026-08-17 | Added Required reading: City VFH studies, deadheading research, advocacy/media |
 | 2026-08-17 | Added section linking the project to Toronto’s 2030 VFH zero-emission goal |
+| 2026-08-18 | Added multi-year / time-series analysis section; updated research questions and Phase 1 |
 
 
