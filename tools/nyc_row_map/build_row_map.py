@@ -20,7 +20,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-BBOX = (43.748, -79.430, 43.786, -79.395)  # s, w, n, e — North York Centre
+BBOX = (43.736, -79.456, 43.799, -79.378)  # s, w, n, e — Mobility Study Area
 USER_AGENT = "traffic-study-nyc-row-map/0.1"
 
 STREET_NAMES = [
@@ -45,6 +45,55 @@ STREET_NAMES = [
     "Bonnington Place",
     "Ellerslie Avenue",
     "Tradewind Avenue",
+    "Franklin Avenue",
+    "Cummer Avenue",
+    "Steeles Avenue East",
+    "Steeles Avenue West",
+    "Bathurst Street",
+    "Bayview Avenue",
+    "Wilson Avenue",
+    "Byng Avenue",
+    "Willowdale Avenue",
+    "Empress Avenue",
+    "Senlac Road",
+    "Cactus Avenue",
+    "Peckham Avenue",
+    "Moore Park Avenue",
+    "Churchill Avenue",
+    "Tamworth Road",
+    "Grantbrook Street",
+    "Drewry Avenue",
+    "Hilda Avenue",
+    "Pleasant Avenue",
+    "Kenneth Avenue",
+    "Newton Drive",
+    "Dumont Street",
+    "Patricia Avenue",
+    "Chelmsford Avenue",
+    "Talbot Road",
+    "Newtonbrook Boulevard",
+    "Fairchild Avenue",
+    "Lorraine Drive",
+    "Wilfred Avenue",
+    "Kingsdale Avenue",
+    "Parkview Avenue",
+    "Burndale Avenue",
+    "Bangor Road",
+    "Burnett Avenue",
+    "Quilter Road",
+    "Harlandale Avenue",
+    "Duplex Avenue",
+    "Hendon Avenue",
+    "Cushendale Drive",
+    "Cushenale Drive",
+    "Silverview Drive",
+    "Bowerbank Drive",
+    "Deering Crescent",
+    "Glendora Avenue",
+    "Burnwell Street",
+    "Dudley Avenue",
+    "Basswood Road",
+    "Basil Hall Court",
 ]
 
 # Table 3-15, Appendix A Mobility Review pp. 80–81.
@@ -333,6 +382,565 @@ SEGMENTS = [
     },
 ]
 
+# Tables 3-16 (arterial), 3-17 (collector), 3-18 (local Poor) — Mobility Review §3.4.3.
+CONDITION_SEGMENTS = [
+    {
+        "id": "cond-yonge-franklin-finch",
+        "label": "Yonge Street (Franklin Avenue to Finch Avenue East)",
+        "street": "Yonge Street",
+        "from_street": "Franklin Avenue",
+        "to_street": "Finch Avenue East",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Implement the REimagining Yonge cross section and associated improvements.",
+        "to_note": "Report start is 43 m south of Franklin Avenue.",
+    },
+    {
+        "id": "cond-yonge-cummer-steeles",
+        "label": "Yonge Street (Cummer Avenue to Steeles Avenue East)",
+        "street": "Yonge Street",
+        "from_street": "Cummer Avenue",
+        "to_street": "Steeles Avenue East",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Yonge Street North TMP includes reconfiguration of this segment similar to REimagining Yonge; opportunity to bundle with future work.",
+    },
+    {
+        "id": "cond-sheppard-e-yonge-bonnington",
+        "label": "Sheppard Avenue East (Yonge Street to Bonnington Place)",
+        "street": "Sheppard Avenue East",
+        "from_street": "Yonge Street",
+        "to_street": "Bonnington Place",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Segment from Yonge Street to Bonnington Place is to be bundled with planned Doris Avenue Extension and will include extending cycle tracks to Yonge Street.",
+    },
+    {
+        "id": "cond-sheppard-e-bonnington-bayview",
+        "label": "Sheppard Avenue East (Bonnington Place to Bayview Avenue)",
+        "street": "Sheppard Avenue East",
+        "from_street": "Bonnington Place",
+        "to_street": "Bayview Avenue",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Major street resurfacing underway to be completed in 2024 from Bonnington Place to Bayview Avenue includes addition of cycle tracks and sidewalk repairs.",
+    },
+    {
+        "id": "cond-sheppard-w-bathurst-yonge",
+        "label": "Sheppard Avenue West (Bathurst Street to Yonge Street)",
+        "street": "Sheppard Avenue West",
+        "from_street": "Bathurst Street",
+        "to_street": "Yonge Street",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, add cycle tracks, potential early works to support future Sheppard Subway Extension.",
+    },
+    {
+        "id": "cond-finch-w-bathurst-yonge",
+        "label": "Finch Avenue West (Bathurst Street to Yonge Street)",
+        "street": "Finch Avenue West",
+        "from_street": "Bathurst Street",
+        "to_street": "Yonge Street",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Poor",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, consider priority measures for surface transit, consider cycling facilities or streetscaping, potential early works to support future Finch West LRT Extension.",
+    },
+    {
+        "id": "cond-finch-e-yonge-bayview",
+        "label": "Finch Avenue East (Yonge Street to Bayview Avenue)",
+        "street": "Finch Avenue East",
+        "from_street": "Yonge Street",
+        "to_street": "Bayview Avenue",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, consider priority measures for surface transit, consider cycling facilities or streetscaping, consider road diet.",
+    },
+    {
+        "id": "cond-doris-church-byng",
+        "label": "Doris Avenue (Church Avenue to Byng Avenue)",
+        "street": "Doris Avenue",
+        "from_street": "Church Avenue",
+        "to_street": "Byng Avenue",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, consider new pedestrian crossing(s), consider cycling facilities, consider road diet.",
+    },
+    {
+        "id": "cond-beecroft-parkhome-poyntz",
+        "label": "Beecroft Road (Park Home Avenue to Poyntz Avenue)",
+        "street": "Beecroft Road",
+        "from_street": "Park Home Avenue",
+        "to_street": "Poyntz Avenue",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, consider new pedestrian crossing(s), consider cycling facilities, consider road diet, consider a wider boulevard.",
+    },
+    {
+        "id": "cond-steeles-w-bathurst-yonge",
+        "label": "Steeles Avenue West (Bathurst Street to Yonge Street)",
+        "street": "Steeles Avenue West",
+        "from_street": "Bathurst Street",
+        "to_street": "Yonge Street",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, consider conversion of curb lanes to bus lanes, add cycling facilities.",
+    },
+    {
+        "id": "cond-steeles-e-yonge-bayview",
+        "label": "Steeles Avenue East (Yonge Street to Bayview Avenue)",
+        "street": "Steeles Avenue East",
+        "from_street": "Yonge Street",
+        "direction": "east",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Poor",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, consider conversion of curb lanes to bus lanes, add cycling facilities.",
+        "to_note": "Report names Bayview Avenue N.",
+    },
+    {
+        "id": "cond-bathurst-wilson-sheppard",
+        "label": "Bathurst Street (Wilson Avenue to Sheppard Avenue)",
+        "street": "Bathurst Street",
+        "from_street": "Wilson Avenue",
+        "to_street": "Sheppard Avenue West",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Poor",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, implement the cycling facility included in the City's Near-Term Implementation Plan.",
+        "to_note": "Report names Sheppard Avenue East as the north end of this Bathurst segment.",
+    },
+    {
+        "id": "cond-bathurst-sheppard-ellerslie",
+        "label": "Bathurst Street (Sheppard Avenue to Ellerslie Avenue)",
+        "street": "Bathurst Street",
+        "from_street": "Sheppard Avenue West",
+        "to_street": "Ellerslie Avenue",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, implement the cycling facility included in the City's Near-Term Implementation Plan.",
+    },
+    {
+        "id": "cond-bathurst-ellerslie-finch",
+        "label": "Bathurst Street (Ellerslie Avenue to Finch Avenue West)",
+        "street": "Bathurst Street",
+        "from_street": "Ellerslie Avenue",
+        "to_street": "Finch Avenue West",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Poor",
+        "opportunity": "Narrow existing lanes, widen existing sidewalks where under 2.1 m, implement the cycling facility included in the City's Near-Term Implementation Plan.",
+    },
+    {
+        "id": "cond-poyntz-beecroft-yonge",
+        "label": "Poyntz Avenue (Beecroft Road to Yonge Street)",
+        "street": "Poyntz Avenue",
+        "from_street": "Beecroft Road",
+        "to_street": "Yonge Street",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Narrow existing lanes, enhance pedestrian realm with buffer on south side.",
+    },
+    {
+        "id": "cond-senlac-finch-sheppard",
+        "label": "Senlac Road (Finch Avenue West to Sheppard Avenue West)",
+        "street": "Senlac Road",
+        "from_street": "Finch Avenue West",
+        "to_street": "Sheppard Avenue West",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Retrofit cycle tracks or bike lanes within existing roadway.",
+        "to_note": "Report names Finch Avenue and Sheppard Avenue East.",
+    },
+    {
+        "id": "cond-willowdale-empress-sheppard",
+        "label": "Willowdale Avenue (Empress Avenue to Sheppard Avenue East)",
+        "street": "Willowdale Avenue",
+        "from_street": "Empress Avenue",
+        "to_street": "Sheppard Avenue East",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Consider new pedestrian crossing(s), widen sidewalks, enhance pedestrian realm with landscaping.",
+    },
+    {
+        "id": "cond-willowdale-cummer-bishop",
+        "label": "Willowdale Avenue (Cummer Avenue to Bishop Avenue)",
+        "street": "Willowdale Avenue",
+        "from_street": "Cummer Avenue",
+        "to_street": "Bishop Avenue",
+        "clazz": "Arterial",
+        "table": "3-16",
+        "condition": "Fair",
+        "opportunity": "Widen existing sidewalks where under 2.1 m, extend existing cycling tracks south of Bishop Avenue north to Steeles Avenue, enhance pedestrian realm with landscaping.",
+    },
+    {
+        "id": "cond-norton-yonge-doris",
+        "label": "Norton Avenue (Yonge Street to Doris Avenue)",
+        "street": "Norton Avenue",
+        "from_street": "Yonge Street",
+        "to_street": "Doris Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Poor",
+        "opportunity": "Narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-bishop-maxome-willowdale",
+        "label": "Bishop Avenue (Maxome Avenue to Willowdale Avenue)",
+        "street": "Bishop Avenue",
+        "from_street": "Maxome Avenue",
+        "to_street": "Willowdale Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Build a pedestrian facility on the north side, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-cactus-peckham-moorepark",
+        "label": "Cactus Avenue (Peckham Avenue to Moore Park Avenue)",
+        "street": "Cactus Avenue",
+        "from_street": "Peckham Avenue",
+        "to_street": "Moore Park Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-churchill-senlac-tamworth",
+        "label": "Churchill Avenue (Senlac Road to Tamworth Road)",
+        "street": "Churchill Avenue",
+        "from_street": "Senlac Road",
+        "to_street": "Tamworth Road",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Build a pedestrian facility on the south side, narrow lanes, widen existing sidewalk, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-grantbrook-finch-drewry",
+        "label": "Grantbrook Street (Finch Avenue West to Drewry Avenue)",
+        "street": "Grantbrook Street",
+        "from_street": "Finch Avenue West",
+        "to_street": "Drewry Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Build a pedestrian facility on the east side, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-hilda-pleasant-drewry",
+        "label": "Hilda Avenue (Pleasant Avenue to Drewry Avenue)",
+        "street": "Hilda Avenue",
+        "from_street": "Pleasant Avenue",
+        "to_street": "Drewry Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Fill in gaps in the pedestrian network on the west side, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures, consider cycling lanes.",
+    },
+    {
+        "id": "cond-kenneth-finch-sheppard",
+        "label": "Kenneth Avenue (Finch Avenue East to Sheppard Avenue East)",
+        "street": "Kenneth Avenue",
+        "from_street": "Finch Avenue East",
+        "to_street": "Sheppard Avenue East",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Fill in gaps in the pedestrian network on the west side, widen existing sidewalks, narrow lanes, enhance pedestrian realm with a wider buffer, landscaping and amenities (benches etc.), implement traffic calming measures, consider cycling facilities.",
+    },
+    {
+        "id": "cond-maxome-steeles-newton",
+        "label": "Maxome Avenue (Steeles Avenue East to Newton Drive)",
+        "street": "Maxome Avenue",
+        "from_street": "Newton Drive",
+        "direction": "north",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures, consider cycling facilities.",
+    },
+    {
+        "id": "cond-maxome-cummer-finch",
+        "label": "Maxome Avenue (Cummer Avenue to Finch Avenue East)",
+        "street": "Maxome Avenue",
+        "from_street": "Cummer Avenue",
+        "to_street": "Finch Avenue East",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Widen existing sidewalks, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures, consider cycling facilities.",
+    },
+    {
+        "id": "cond-newton-yonge-dumont",
+        "label": "Newton Drive (Yonge Street to Dumont Street)",
+        "street": "Newton Drive",
+        "from_street": "Yonge Street",
+        "to_street": "Dumont Street",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Build a sidewalk on the south side, widen existing sidewalk, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-newton-willowdale-bayview",
+        "label": "Newton Drive (Willowdale Avenue to Bayview Avenue)",
+        "street": "Newton Drive",
+        "from_street": "Willowdale Avenue",
+        "direction": "east",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Fill in gaps in the pedestrian network on the west side, widen existing sidewalks, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures, consider cycling facilities.",
+    },
+    {
+        "id": "cond-parkhome-beecroft-yonge",
+        "label": "Park Home Avenue (Beecroft Road to Yonge Street)",
+        "street": "Park Home Avenue",
+        "from_street": "Beecroft Road",
+        "to_street": "Yonge Street",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Widen existing sidewalk, narrow lanes, enhance pedestrian realm with wider buffer on south side, landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-patricia-chelmsford-peckham",
+        "label": "Patricia Avenue (Chelmsford Avenue to Peckham Avenue)",
+        "street": "Patricia Avenue",
+        "from_street": "Chelmsford Avenue",
+        "to_street": "Peckham Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Widen existing sidewalk, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-patricia-peckham-cactus",
+        "label": "Patricia Avenue (Peckham Avenue to Cactus Avenue)",
+        "street": "Patricia Avenue",
+        "from_street": "Peckham Avenue",
+        "to_street": "Cactus Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Poor",
+        "opportunity": "Widen existing sidewalk, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-patricia-cactus-hilda",
+        "label": "Patricia Avenue (Cactus Avenue to Hilda Avenue)",
+        "street": "Patricia Avenue",
+        "from_street": "Cactus Avenue",
+        "to_street": "Hilda Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Build a sidewalk on the north side, widen existing sidewalk, narrow lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-talbot-newtonbrook-fairchild",
+        "label": "Talbot Road (Newtonbrook Boulevard to Fairchild Avenue)",
+        "street": "Talbot Road",
+        "from_street": "Newtonbrook Boulevard",
+        "to_street": "Fairchild Avenue",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Poor",
+        "opportunity": "Narrow vehicle lanes, widen sidewalks, consider bicycle lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-talbot-fairchild-lorraine",
+        "label": "Talbot Road (Fairchild Avenue to Lorraine Drive)",
+        "street": "Talbot Road",
+        "from_street": "Fairchild Avenue",
+        "to_street": "Lorraine Drive",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Narrow vehicle lanes, widen sidewalks, consider bicycle lanes, enhance pedestrian realm with landscaping and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-wilfred-finch-sheppard",
+        "label": "Wilfred Avenue (Finch Avenue East to Sheppard Avenue East)",
+        "street": "Wilfred Avenue",
+        "from_street": "Finch Avenue East",
+        "to_street": "Sheppard Avenue East",
+        "clazz": "Collector",
+        "table": "3-17",
+        "condition": "Fair",
+        "opportunity": "Narrow vehicle lanes, widen sidewalks, enhance pedestrian realm with a greater buffer on the east side and amenities (benches etc.), implement traffic calming measures.",
+    },
+    {
+        "id": "cond-byng-yonge-kenneth",
+        "label": "Byng Avenue (Yonge Street to Kenneth Avenue)",
+        "street": "Byng Avenue",
+        "from_street": "Yonge Street",
+        "to_street": "Kenneth Avenue",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Widen existing sidewalks where under 2.1 m, enhance pedestrian realm with landscaping and amenities (benches etc.).",
+    },
+    {
+        "id": "cond-kingsdale-doris-kenneth",
+        "label": "Kingsdale Avenue (Doris Avenue to Kenneth Avenue)",
+        "street": "Kingsdale Avenue",
+        "from_street": "Doris Avenue",
+        "to_street": "Kenneth Avenue",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Narrowing vehicle lanes, enhance pedestrian realm with landscaping and amenities (benches etc.).",
+    },
+    {
+        "id": "cond-parkview-yonge-doris",
+        "label": "Parkview Avenue (Yonge Street to Doris Avenue)",
+        "street": "Parkview Avenue",
+        "from_street": "Yonge Street",
+        "to_street": "Doris Avenue",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Enhance pedestrian realm with green buffer, landscaping and amenities (benches etc.).",
+    },
+    {
+        "id": "cond-burndale-bangor-burnett",
+        "label": "Burndale Avenue (Bangor Road to Burnett Avenue)",
+        "street": "Burndale Avenue",
+        "from_street": "Bangor Road",
+        "to_street": "Burnett Avenue",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Build pedestrian facility.",
+    },
+    {
+        "id": "cond-elmhurst-senlac-quilter",
+        "label": "Elmhurst Avenue (Senlac Road to Quilter Road)",
+        "street": "Elmhurst Avenue",
+        "from_street": "Senlac Road",
+        "to_street": "Quilter Road",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Build pedestrian facility.",
+    },
+    {
+        "id": "cond-harlandale-senlac-elmhurst",
+        "label": "Harlandale Avenue (Senlac Road to Elmhurst Avenue)",
+        "street": "Harlandale Avenue",
+        "from_street": "Senlac Road",
+        "to_street": "Elmhurst Avenue",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Enhance pedestrian realm with landscaping.",
+    },
+    {
+        "id": "cond-duplex-hendon-finch",
+        "label": "Duplex Avenue (Hendon Avenue to Finch Avenue West)",
+        "street": "Duplex Avenue",
+        "from_street": "Hendon Avenue",
+        "to_street": "Finch Avenue West",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Enhance pedestrian realm with green buffer, landscaping and amenities (benches etc.), potential for cycling facility (connections to Finch Recreational Trail).",
+    },
+    {
+        "id": "cond-cushendale-silverview-bowerbank",
+        "label": "Cushendale Drive (Silverview Drive to Bowerbank Drive)",
+        "street": "Cushendale Drive",
+        "from_street": "Silverview Drive",
+        "to_street": "Bowerbank Drive",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Build pedestrian facility.",
+        "to_note": "Report spells this Cushenale Drive.",
+    },
+    {
+        "id": "cond-bowerbank-silverview-deering",
+        "label": "Bowerbank Drive (Silverview Drive to Deering Crescent)",
+        "street": "Bowerbank Drive",
+        "from_street": "Silverview Drive",
+        "to_street": "Deering Crescent",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Build pedestrian facility.",
+    },
+    {
+        "id": "cond-bonnington-sheppard-avondale",
+        "label": "Bonnington Place (Sheppard Avenue East to Avondale Avenue)",
+        "street": "Bonnington Place",
+        "from_street": "Sheppard Avenue East",
+        "direction": "south",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Enhance pedestrian realm with green buffer, landscaping and amenities (benches etc.).",
+    },
+    {
+        "id": "cond-tradewind-sheppard-avondale",
+        "label": "Tradewind Avenue (Sheppard Avenue East to Avondale Avenue)",
+        "street": "Tradewind Avenue",
+        "from_street": "Avondale Avenue",
+        "direction": "north",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Enhance pedestrian realm with green buffer, landscaping and amenities (benches etc.).",
+        "to_note": "Report groups Bonnington Place / Tradewind Avenue as one corridor.",
+    },
+    {
+        "id": "cond-glendora-burnwell-dudley",
+        "label": "Glendora Avenue (Burnwell Street to Dudley Avenue)",
+        "street": "Glendora Avenue",
+        "from_street": "Burnwell Street",
+        "to_street": "Dudley Avenue",
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Build pedestrian facility.",
+    },
+    {
+        "id": "cond-basswood",
+        "label": "Basswood Road (100 m north of Churchill Avenue)",
+        "street": "Basswood Road",
+        "whole_street": True,
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Build pedestrian facility.",
+        "to_note": "Report locates the poor segment 100 m north of Churchill Avenue; mapped as Basswood Road in the study area.",
+    },
+    {
+        "id": "cond-basil-hall",
+        "label": "Basil Hall Court (Beecroft Road)",
+        "street": "Basil Hall Court",
+        "whole_street": True,
+        "clazz": "Local",
+        "table": "3-18",
+        "condition": "Poor",
+        "opportunity": "Widen existing sidewalk.",
+    },
+]
+
 
 def haversine_m(a: tuple[float, float], b: tuple[float, float]) -> float:
     lat1, lon1 = a
@@ -436,6 +1044,22 @@ class StreetNet:
                 continue
             if any(haversine_m(pt, self.coord[s]) <= 22.0 for s in spine):
                 keep.add(n)
+        return self._lines_from_nodes(keep)
+
+    def between_box(self, starts: set[int], ends: set[int]) -> list[list[tuple[float, float]]]:
+        pts = [self.coord[n] for n in starts | ends if n in self.coord]
+        if len(pts) < 2:
+            return []
+        lats = [p[0] for p in pts]
+        lons = [p[1] for p in pts]
+        pad = 0.0004
+        minlat, maxlat = min(lats) - pad, max(lats) + pad
+        minlon, maxlon = min(lons) - pad, max(lons) + pad
+        keep = {
+            n
+            for n, (lat, lon) in self.coord.items()
+            if minlat <= lat <= maxlat and minlon <= lon <= maxlon
+        }
         return self._lines_from_nodes(keep)
 
     def ray(self, starts: set[int], direction: str) -> list[list[tuple[float, float]]]:
@@ -543,6 +1167,8 @@ def geometry_for(seg: dict, nets: dict[str, StreetNet]) -> list[list[tuple[float
     net = nets.get(street)
     if net is None:
         return []
+    if seg.get("whole_street"):
+        return net._lines_from_nodes(set(net.coord))
 
     def nodes_from_spec(spec_key: str, offset_key: str) -> set[int]:
         if spec_key in seg:
@@ -557,7 +1183,10 @@ def geometry_for(seg: dict, nets: dict[str, StreetNet]) -> list[list[tuple[float
     if "direction" in seg:
         return net.ray(starts, seg["direction"])
     ends = nodes_from_spec("to_street", "to_offset")
-    return net.between(starts, ends)
+    lines = net.between(starts, ends)
+    if lines:
+        return lines
+    return net.between_box(starts, ends)
 
 
 def color_for(excess: float) -> str:
@@ -570,7 +1199,11 @@ def color_for(excess: float) -> str:
     return "#b42318"
 
 
-def feature_collection(segs_with_geom: list[tuple[dict, list]]) -> dict:
+def condition_color(condition: str) -> str:
+    return "#7a1f1a" if condition == "Poor" else "#8a6a28"
+
+
+def feature_collection(segs_with_geom: list[tuple[dict, list]], kind: str) -> dict:
     features = []
     for seg, lines in segs_with_geom:
         coords = [[[lon, lat] for lat, lon in line] for line in lines]
@@ -582,9 +1215,13 @@ def feature_collection(segs_with_geom: list[tuple[dict, list]]) -> dict:
         props = {
             k: v
             for k, v in seg.items()
-            if k not in {"from_offset", "to_offset"}
+            if k not in {"from_offset", "to_offset", "whole_street"}
         }
-        props["color"] = color_for(seg["excess_pavement_m"])
+        props["kind"] = kind
+        if kind == "row":
+            props["color"] = color_for(seg["excess_pavement_m"])
+        else:
+            props["color"] = condition_color(seg["condition"])
         features.append({"type": "Feature", "geometry": geom, "properties": props})
     return {"type": "FeatureCollection", "features": features}
 
@@ -594,20 +1231,22 @@ HTML = """<!DOCTYPE html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>North York Centre — Table 3-15 Right-of-Way</title>
+  <title>North York Centre — Mobility Review 3.4</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body, #map { height: 100%; margin: 0; }
     body { font-family: Georgia, "Times New Roman", serif; }
     .panel {
       position: absolute; z-index: 1000; top: 12px; left: 12px;
-      background: #fff; padding: 12px 14px; max-width: 340px;
-      border: 1px solid #222; font-size: 13px; line-height: 1.35;
+      background: #fff; padding: 12px 14px; max-width: 360px; max-height: calc(100% - 24px);
+      overflow: auto; border: 1px solid #222; font-size: 13px; line-height: 1.35;
     }
     .panel h1 { font-size: 16px; margin: 0 0 6px; font-weight: 600; }
     .panel p { margin: 0 0 8px; }
     .legend span { display: inline-block; width: 18px; height: 6px; margin-right: 6px; vertical-align: middle; }
     .legend div { margin: 3px 0; }
+    .legend h2 { font-size: 12px; margin: 10px 0 4px; font-weight: 600; }
+    .layers label { display: block; margin: 3px 0; }
     .popup dt { font-weight: 600; }
     .popup dd { margin: 0 0 6px; }
     .search { display: flex; gap: 6px; margin: 8px 0 6px; }
@@ -630,8 +1269,12 @@ HTML = """<!DOCTYPE html>
 </head>
 <body>
   <div class="panel">
-    <h1>3.4 Right-of-Way on OpenStreetMap</h1>
-    <p>Table 3-15 from Appendix A, <em>North York at the Centre</em> Phase 1 Background Report. Lines are OSM street centreline, not legal ROW polygons. Colour is excess pavement vs. the City lane-width target.</p>
+    <h1>3.4 Right-of-Way and pavement condition</h1>
+    <p>Appendix A, <em>North York at the Centre</em> Phase 1 Background Report. Lines are OSM street centreline, not legal ROW polygons.</p>
+    <div class="layers">
+      <label><input type="checkbox" id="toggle-row" checked /> 3.4.1 Right-of-way / excess pavement</label>
+      <label><input type="checkbox" id="toggle-pavement" checked /> 3.4.3 Pavement condition (Fair / Poor)</label>
+    </div>
     <form class="search" id="search-form" role="search">
       <label class="visually-hidden" for="street-search" style="position:absolute;left:-9999px">Street</label>
       <input id="street-search" name="q" type="search" list="street-names" placeholder="Search a street" autocomplete="off" />
@@ -640,34 +1283,52 @@ HTML = """<!DOCTYPE html>
     <datalist id="street-names"></datalist>
     <p id="search-status"></p>
     <ul id="search-results" hidden></ul>
-    <div class="legend">
-      <div><span style="background:#4c6b58"></span> 0–0.3 m excess</div>
+    <div class="legend" id="legend-row">
+      <h2>3.4.1 Excess pavement</h2>
+      <div><span style="background:#4c6b58"></span> 0–0.3 m</div>
       <div><span style="background:#c4a35a"></span> 0.3–1.0 m</div>
       <div><span style="background:#c47a3a"></span> 1.0–2.0 m</div>
       <div><span style="background:#b42318"></span> over 2.0 m</div>
     </div>
-    <p style="margin-top:8px;font-size:12px">Click a corridor for existing / planned ROW. Source: City of Toronto report · basemap © OpenStreetMap</p>
+    <div class="legend" id="legend-pavement">
+      <h2>3.4.3 Condition</h2>
+      <div><span style="background:#8a6a28;height:0;border-top:3px dashed #8a6a28"></span> Fair</div>
+      <div><span style="background:#7a1f1a;height:0;border-top:3px dashed #7a1f1a"></span> Poor</div>
+    </div>
+    <p style="margin-top:8px;font-size:12px">Click a corridor for details. Source: City of Toronto report · basemap © OpenStreetMap</p>
   </div>
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const data = GEOJSON_PLACEHOLDER;
-    const map = L.map("map").setView([43.7615, -79.411], 14);
+    const rowData = ROW_GEOJSON_PLACEHOLDER;
+    const pavementData = PAVEMENT_GEOJSON_PLACEHOLDER;
+    const map = L.map("map").setView([43.7615, -79.411], 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap"
     }).addTo(map);
+
     const corridors = [];
-    function baseStyle(feat) {
-      return { color: feat.properties.color, weight: 6, opacity: 0.9 };
+    function rowStyle(feat) {
+      return { color: feat.properties.color, weight: 7, opacity: 0.85 };
     }
-    const layer = L.geoJSON(data, {
-      style: baseStyle,
-      onEachFeature(feat, lyr) {
-        const p = feat.properties;
-        const vary = p.travel_width_varies ? "*" : "";
-        lyr.bindPopup(`
-          <div class="popup">
+    function pavementStyle(feat) {
+      return { color: feat.properties.color, weight: 4, opacity: 1, dashArray: "8 6" };
+    }
+    function popupHtml(p) {
+      if (p.kind === "pavement") {
+        return `<div class="popup">
+            <strong>${p.label}</strong>
+            <dl>
+              <dt>Condition</dt><dd>${p.condition} (${p.clazz})</dd>
+              <dt>Table</dt><dd>${p.table}</dd>
+              <dt>Opportunity</dt><dd>${p.opportunity}</dd>
+            </dl>
+            ${p.to_note ? `<p>${p.to_note}</p>` : ""}
+          </div>`;
+      }
+      const vary = p.travel_width_varies ? "*" : "";
+      return `<div class="popup">
             <strong>${p.label}</strong>
             <dl>
               <dt>Existing / planned ROW</dt>
@@ -680,11 +1341,26 @@ HTML = """<!DOCTYPE html>
               <dd>${p.excess_pavement_m} m</dd>
             </dl>
             ${p.to_note ? `<p>${p.to_note}</p>` : ""}
-          </div>`);
+          </div>`;
+    }
+
+    const rowLayer = L.geoJSON(rowData, {
+      style: rowStyle,
+      onEachFeature(feat, lyr) {
+        lyr.bindPopup(popupHtml(feat.properties));
         corridors.push(lyr);
       }
     }).addTo(map);
-    if (layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+    const pavementLayer = L.geoJSON(pavementData, {
+      style: pavementStyle,
+      onEachFeature(feat, lyr) {
+        lyr.bindPopup(popupHtml(feat.properties));
+        corridors.push(lyr);
+      }
+    }).addTo(map);
+
+    const allBounds = L.featureGroup([rowLayer, pavementLayer]).getBounds();
+    if (allBounds.isValid()) map.fitBounds(allBounds, { padding: [40, 40] });
 
     const names = [...new Set(corridors.map((lyr) => lyr.feature.properties.street))].sort();
     const datalist = document.getElementById("street-names");
@@ -696,14 +1372,23 @@ HTML = """<!DOCTYPE html>
 
     const statusEl = document.getElementById("search-status");
     const resultsEl = document.getElementById("search-results");
+    const toggleRow = document.getElementById("toggle-row");
+    const togglePavement = document.getElementById("toggle-pavement");
+
+    function layerVisible(lyr) {
+      const kind = lyr.feature.properties.kind;
+      if (kind === "pavement") return togglePavement.checked;
+      return toggleRow.checked;
+    }
 
     function resetStyles() {
-      layer.eachLayer((lyr) => lyr.setStyle(baseStyle(lyr.feature)));
+      rowLayer.eachLayer((lyr) => lyr.setStyle(rowStyle(lyr.feature)));
+      pavementLayer.eachLayer((lyr) => lyr.setStyle(pavementStyle(lyr.feature)));
     }
 
     function focusCorridor(lyr) {
       resetStyles();
-      lyr.setStyle({ color: "#111", weight: 9, opacity: 1 });
+      lyr.setStyle({ color: "#111", weight: 9, opacity: 1, dashArray: null });
       lyr.bringToFront();
       const bounds = lyr.getBounds();
       if (bounds.isValid()) map.fitBounds(bounds, { padding: [48, 48], maxZoom: 17 });
@@ -711,7 +1396,7 @@ HTML = """<!DOCTYPE html>
     }
 
     function haystack(p) {
-      return [p.label, p.street, p.from_street, p.to_street, p.id]
+      return [p.label, p.street, p.from_street, p.to_street, p.id, p.condition, p.clazz, p.opportunity]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -725,9 +1410,9 @@ HTML = """<!DOCTYPE html>
         statusEl.textContent = "Type a street name, then search.";
         return;
       }
-      const hits = corridors.filter((lyr) => haystack(lyr.feature.properties).includes(q));
+      const hits = corridors.filter((lyr) => layerVisible(lyr) && haystack(lyr.feature.properties).includes(q));
       if (!hits.length) {
-        statusEl.textContent = `No corridor matches “${query.trim()}”.`;
+        statusEl.textContent = `No visible corridor matches “${query.trim()}”.`;
         return;
       }
       if (hits.length === 1) {
@@ -741,7 +1426,8 @@ HTML = """<!DOCTYPE html>
         const item = document.createElement("li");
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.textContent = lyr.feature.properties.label;
+        const p = lyr.feature.properties;
+        btn.textContent = p.kind === "pavement" ? `${p.label} — ${p.condition}` : p.label;
         btn.addEventListener("click", () => focusCorridor(lyr));
         item.appendChild(btn);
         resultsEl.appendChild(item);
@@ -753,18 +1439,23 @@ HTML = """<!DOCTYPE html>
       event.preventDefault();
       searchStreets(document.getElementById("street-search").value);
     });
+    toggleRow.addEventListener("change", () => {
+      if (toggleRow.checked) map.addLayer(rowLayer); else map.removeLayer(rowLayer);
+      document.getElementById("legend-row").hidden = !toggleRow.checked;
+    });
+    togglePavement.addEventListener("change", () => {
+      if (togglePavement.checked) map.addLayer(pavementLayer); else map.removeLayer(pavementLayer);
+      document.getElementById("legend-pavement").hidden = !togglePavement.checked;
+    });
   </script>
 </body>
 </html>
 """
 
 
-def main() -> None:
-    data = overpass_query()
-    nets = nets_from_overpass(data)
-    print("OSM streets:", {k: len(v.coord) for k, v in sorted(nets.items())})
+def build_layer(segments: list[dict], nets: dict[str, StreetNet], kind: str) -> dict:
     built = []
-    for seg in SEGMENTS:
+    for seg in segments:
         geom = geometry_for(seg, nets)
         npts = sum(len(g) for g in geom)
         print(f"{seg['id']}: {len(geom)} parts, {npts} vertices")
@@ -772,12 +1463,26 @@ def main() -> None:
             built.append((seg, geom))
         else:
             print("  WARNING: no geometry")
-    fc = feature_collection(built)
-    geo_path = HERE / "table-3-15.geojson"
-    geo_path.write_text(json.dumps(fc))
-    html = HTML.replace("GEOJSON_PLACEHOLDER", json.dumps(fc))
+    return feature_collection(built, kind)
+
+
+def main() -> None:
+    data = overpass_query()
+    nets = nets_from_overpass(data)
+    print("OSM streets:", {k: len(v.coord) for k, v in sorted(nets.items())})
+    print("--- 3.4.1 ROW ---")
+    row_fc = build_layer(SEGMENTS, nets, "row")
+    print("--- 3.4.3 pavement ---")
+    pavement_fc = build_layer(CONDITION_SEGMENTS, nets, "pavement")
+    (HERE / "table-3-15.geojson").write_text(json.dumps(row_fc))
+    (HERE / "table-3-16-18.geojson").write_text(json.dumps(pavement_fc))
+    html = (
+        HTML.replace("ROW_GEOJSON_PLACEHOLDER", json.dumps(row_fc))
+        .replace("PAVEMENT_GEOJSON_PLACEHOLDER", json.dumps(pavement_fc))
+    )
     (HERE / "index.html").write_text(html)
-    print(f"wrote {geo_path}")
+    print(f"wrote {HERE / 'table-3-15.geojson'}")
+    print(f"wrote {HERE / 'table-3-16-18.geojson'}")
     print(f"wrote {HERE / 'index.html'}")
 
 
