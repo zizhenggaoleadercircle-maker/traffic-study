@@ -610,12 +610,36 @@ HTML = """<!DOCTYPE html>
     .legend div { margin: 3px 0; }
     .popup dt { font-weight: 600; }
     .popup dd { margin: 0 0 6px; }
+    .search { display: flex; gap: 6px; margin: 8px 0 6px; }
+    .search input {
+      flex: 1; min-width: 0; font: inherit; padding: 4px 6px;
+      border: 1px solid #222; background: #fff;
+    }
+    .search button {
+      font: inherit; padding: 4px 10px; border: 1px solid #222;
+      background: #222; color: #fff; cursor: pointer;
+    }
+    #search-status { margin: 0; font-size: 12px; min-height: 1.2em; }
+    #search-results { list-style: none; margin: 6px 0 0; padding: 0; max-height: 140px; overflow: auto; }
+    #search-results button {
+      display: block; width: 100%; text-align: left; font: inherit;
+      font-size: 12px; padding: 4px 0; border: 0; border-top: 1px solid #ddd;
+      background: transparent; cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="panel">
     <h1>3.4 Right-of-Way on OpenStreetMap</h1>
     <p>Table 3-15 from Appendix A, <em>North York at the Centre</em> Phase 1 Background Report. Lines are OSM street centreline, not legal ROW polygons. Colour is excess pavement vs. the City lane-width target.</p>
+    <form class="search" id="search-form" role="search">
+      <label class="visually-hidden" for="street-search" style="position:absolute;left:-9999px">Street</label>
+      <input id="street-search" name="q" type="search" list="street-names" placeholder="Search a street" autocomplete="off" />
+      <button type="submit">Search</button>
+    </form>
+    <datalist id="street-names"></datalist>
+    <p id="search-status"></p>
+    <ul id="search-results" hidden></ul>
     <div class="legend">
       <div><span style="background:#4c6b58"></span> 0–0.3 m excess</div>
       <div><span style="background:#c4a35a"></span> 0.3–1.0 m</div>
@@ -633,10 +657,12 @@ HTML = """<!DOCTYPE html>
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap"
     }).addTo(map);
+    const corridors = [];
+    function baseStyle(feat) {
+      return { color: feat.properties.color, weight: 6, opacity: 0.9 };
+    }
     const layer = L.geoJSON(data, {
-      style(feat) {
-        return { color: feat.properties.color, weight: 6, opacity: 0.9 };
-      },
+      style: baseStyle,
       onEachFeature(feat, lyr) {
         const p = feat.properties;
         const vary = p.travel_width_varies ? "*" : "";
@@ -655,9 +681,78 @@ HTML = """<!DOCTYPE html>
             </dl>
             ${p.to_note ? `<p>${p.to_note}</p>` : ""}
           </div>`);
+        corridors.push(lyr);
       }
     }).addTo(map);
     if (layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+
+    const names = [...new Set(corridors.map((lyr) => lyr.feature.properties.street))].sort();
+    const datalist = document.getElementById("street-names");
+    names.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      datalist.appendChild(opt);
+    });
+
+    const statusEl = document.getElementById("search-status");
+    const resultsEl = document.getElementById("search-results");
+
+    function resetStyles() {
+      layer.eachLayer((lyr) => lyr.setStyle(baseStyle(lyr.feature)));
+    }
+
+    function focusCorridor(lyr) {
+      resetStyles();
+      lyr.setStyle({ color: "#111", weight: 9, opacity: 1 });
+      lyr.bringToFront();
+      const bounds = lyr.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [48, 48], maxZoom: 17 });
+      lyr.openPopup();
+    }
+
+    function haystack(p) {
+      return [p.label, p.street, p.from_street, p.to_street, p.id]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+    }
+
+    function searchStreets(query) {
+      const q = query.trim().toLowerCase();
+      resultsEl.replaceChildren();
+      resultsEl.hidden = true;
+      if (!q) {
+        statusEl.textContent = "Type a street name, then search.";
+        return;
+      }
+      const hits = corridors.filter((lyr) => haystack(lyr.feature.properties).includes(q));
+      if (!hits.length) {
+        statusEl.textContent = `No corridor matches “${query.trim()}”.`;
+        return;
+      }
+      if (hits.length === 1) {
+        statusEl.textContent = hits[0].feature.properties.label;
+        focusCorridor(hits[0]);
+        return;
+      }
+      statusEl.textContent = `${hits.length} corridors match.`;
+      resultsEl.hidden = false;
+      hits.forEach((lyr) => {
+        const item = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = lyr.feature.properties.label;
+        btn.addEventListener("click", () => focusCorridor(lyr));
+        item.appendChild(btn);
+        resultsEl.appendChild(item);
+      });
+      focusCorridor(hits[0]);
+    }
+
+    document.getElementById("search-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      searchStreets(document.getElementById("street-search").value);
+    });
   </script>
 </body>
 </html>
