@@ -1226,6 +1226,41 @@ def feature_collection(segs_with_geom: list[tuple[dict, list]], kind: str) -> di
     return {"type": "FeatureCollection", "features": features}
 
 
+def parking_feature_collection() -> dict:
+    lots = json.loads((HERE / "parking-lots.json").read_text())
+    cache = json.loads((HERE / "parking-geocode-cache.json").read_text())
+    used: dict[tuple[float, float], int] = {}
+    features = []
+    for lot in lots:
+        hit = cache.get(lot["address"])
+        if not hit:
+            print(f"  WARNING: no geocode for {lot['id']} {lot['address']}")
+            continue
+        lat, lon = hit["lat"], hit["lon"]
+        key = (round(lat, 5), round(lon, 5))
+        n = used.get(key, 0)
+        used[key] = n + 1
+        # Nudge stacked lots at the same address so both markers stay clickable.
+        lon = lon + n * 0.00012
+        color = {
+            "Public off-street": "#1f4e79",
+            "TTC commuter": "#5b2c6f",
+            "Private off-street": "#2e5a3c",
+        }[lot["clazz"]]
+        props = dict(lot)
+        props["kind"] = "parking"
+        props["color"] = color
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "properties": props,
+            }
+        )
+        print(f"{lot['id']}: {lat:.5f},{lon:.5f}")
+    return {"type": "FeatureCollection", "features": features}
+
+
 HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1269,11 +1304,12 @@ HTML = """<!DOCTYPE html>
 </head>
 <body>
   <div class="panel">
-    <h1>3.4 Right-of-Way and pavement condition</h1>
-    <p>Appendix A, <em>North York at the Centre</em> Phase 1 Background Report. Lines are OSM street centreline, not legal ROW polygons.</p>
+    <h1>North York Centre mobility map</h1>
+    <p>Appendix A, <em>North York at the Centre</em> Phase 1 Background Report. Street lines are OSM centreline, not legal ROW polygons. Parking markers are geocoded from the report addresses.</p>
     <div class="layers">
       <label><input type="checkbox" id="toggle-row" checked /> 3.4.1 Right-of-way / excess pavement</label>
       <label><input type="checkbox" id="toggle-pavement" /> 3.4.3 Pavement condition (Fair / Poor)</label>
+      <label><input type="checkbox" id="toggle-parking" checked /> 3.5 Parking lots</label>
     </div>
     <form class="search" id="search-form" role="search">
       <label class="visually-hidden" for="street-search" style="position:absolute;left:-9999px">Street</label>
@@ -1295,13 +1331,20 @@ HTML = """<!DOCTYPE html>
       <div><span style="background:#8a6a28;height:0;border-top:3px dashed #8a6a28"></span> Fair</div>
       <div><span style="background:#7a1f1a;height:0;border-top:3px dashed #7a1f1a"></span> Poor</div>
     </div>
-    <p style="margin-top:8px;font-size:12px">Click a corridor for details. Source: City of Toronto report · basemap © OpenStreetMap</p>
+    <div class="legend" id="legend-parking">
+      <h2>3.5 Parking</h2>
+      <div><span style="background:#1f4e79;width:10px;height:10px;border-radius:50%"></span> Public (TPA)</div>
+      <div><span style="background:#5b2c6f;width:10px;height:10px;border-radius:50%"></span> TTC commuter</div>
+      <div><span style="background:#2e5a3c;width:10px;height:10px;border-radius:50%"></span> Private off-street</div>
+    </div>
+    <p style="margin-top:8px;font-size:12px">Click a corridor or marker for details. Source: City of Toronto report · basemap © OpenStreetMap</p>
   </div>
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const rowData = ROW_GEOJSON_PLACEHOLDER;
     const pavementData = PAVEMENT_GEOJSON_PLACEHOLDER;
+    const parkingData = PARKING_GEOJSON_PLACEHOLDER;
     const map = L.map("map").setView([43.7615, -79.411], 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -1316,6 +1359,21 @@ HTML = """<!DOCTYPE html>
       return { color: feat.properties.color, weight: 4, opacity: 1, dashArray: "8 6" };
     }
     function popupHtml(p) {
+      if (p.kind === "parking") {
+        const spaces = p.spaces == null ? "Not stated" : p.spaces;
+        return `<div class="popup">
+            <strong>${p.label}</strong>
+            <dl>
+              <dt>Type</dt><dd>${p.clazz}</dd>
+              <dt>Address</dt><dd>${p.address}</dd>
+              ${p.location ? `<dt>Report location</dt><dd>${p.location}</dd>` : ""}
+              <dt>Spaces</dt><dd>${spaces}${p.structure ? ` · ${p.structure}` : ""}</dd>
+              <dt>Occupancy</dt><dd>${p.occupancy}</dd>
+              <dt>Table</dt><dd>${p.table}</dd>
+            </dl>
+            ${p.notes ? `<p>${p.notes}</p>` : ""}
+          </div>`;
+      }
       if (p.kind === "pavement") {
         return `<div class="popup">
             <strong>${p.label}</strong>
@@ -1351,6 +1409,23 @@ HTML = """<!DOCTYPE html>
         corridors.push(lyr);
       }
     }).addTo(map);
+    const parkingLayer = L.geoJSON(parkingData, {
+      pointToLayer(feat, latlng) {
+        const spaces = feat.properties.spaces;
+        const radius = spaces ? Math.max(7, Math.min(14, 6 + Math.sqrt(spaces) / 3)) : 9;
+        return L.circleMarker(latlng, {
+          radius,
+          color: "#fff",
+          weight: 1,
+          fillColor: feat.properties.color,
+          fillOpacity: 0.95
+        });
+      },
+      onEachFeature(feat, lyr) {
+        lyr.bindPopup(popupHtml(feat.properties));
+        corridors.push(lyr);
+      }
+    }).addTo(map);
     const pavementLayer = L.geoJSON(pavementData, {
       style: pavementStyle,
       onEachFeature(feat, lyr) {
@@ -1362,7 +1437,7 @@ HTML = """<!DOCTYPE html>
     const rowBounds = rowLayer.getBounds();
     if (rowBounds.isValid()) map.fitBounds(rowBounds, { padding: [40, 40] });
 
-    const names = [...new Set(corridors.map((lyr) => lyr.feature.properties.street))].sort();
+    const names = [...new Set(corridors.map((lyr) => lyr.feature.properties.street || lyr.feature.properties.label))].sort();
     const datalist = document.getElementById("street-names");
     names.forEach((name) => {
       const opt = document.createElement("option");
@@ -1374,29 +1449,41 @@ HTML = """<!DOCTYPE html>
     const resultsEl = document.getElementById("search-results");
     const toggleRow = document.getElementById("toggle-row");
     const togglePavement = document.getElementById("toggle-pavement");
+    const toggleParking = document.getElementById("toggle-parking");
 
     function layerVisible(lyr) {
       const kind = lyr.feature.properties.kind;
       if (kind === "pavement") return togglePavement.checked;
+      if (kind === "parking") return toggleParking.checked;
       return toggleRow.checked;
     }
 
     function resetStyles() {
       rowLayer.eachLayer((lyr) => lyr.setStyle(rowStyle(lyr.feature)));
       pavementLayer.eachLayer((lyr) => lyr.setStyle(pavementStyle(lyr.feature)));
+      parkingLayer.eachLayer((lyr) => {
+        const p = lyr.feature.properties;
+        lyr.setStyle({ color: "#fff", weight: 1, fillColor: p.color, fillOpacity: 0.95 });
+      });
     }
 
     function focusCorridor(lyr) {
       resetStyles();
-      lyr.setStyle({ color: "#111", weight: 9, opacity: 1, dashArray: null });
-      lyr.bringToFront();
-      const bounds = lyr.getBounds();
-      if (bounds.isValid()) map.fitBounds(bounds, { padding: [48, 48], maxZoom: 17 });
+      const p = lyr.feature.properties;
+      if (p.kind === "parking") {
+        lyr.setStyle({ color: "#111", weight: 2, fillColor: "#111", fillOpacity: 1 });
+        map.setView(lyr.getLatLng(), 17);
+      } else {
+        lyr.setStyle({ color: "#111", weight: 9, opacity: 1, dashArray: null });
+        lyr.bringToFront();
+        const bounds = lyr.getBounds();
+        if (bounds.isValid()) map.fitBounds(bounds, { padding: [48, 48], maxZoom: 17 });
+      }
       lyr.openPopup();
     }
 
     function haystack(p) {
-      return [p.label, p.street, p.from_street, p.to_street, p.id, p.condition, p.clazz, p.opportunity]
+      return [p.label, p.street, p.from_street, p.to_street, p.id, p.condition, p.clazz, p.opportunity, p.address, p.operator]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -1430,7 +1517,11 @@ HTML = """<!DOCTYPE html>
         const btn = document.createElement("button");
         btn.type = "button";
         const p = lyr.feature.properties;
-        btn.textContent = p.kind === "pavement" ? `${p.label} — ${p.condition}` : p.label;
+        btn.textContent = p.kind === "pavement"
+          ? `${p.label} — ${p.condition}`
+          : p.kind === "parking"
+            ? `${p.label} (${p.clazz})`
+            : p.label;
         btn.addEventListener("click", () => focusCorridor(lyr));
         item.appendChild(btn);
         resultsEl.appendChild(item);
@@ -1453,10 +1544,12 @@ HTML = """<!DOCTYPE html>
         return;
       }
       map.addLayer(pavementLayer);
-      // The condition tables reach Bathurst, Steeles, and Bayview, well outside
-      // the Table 3-15 extent, so widen the view when this layer first appears.
       const bounds = pavementLayer.getBounds();
       if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40] });
+    });
+    toggleParking.addEventListener("change", () => {
+      document.getElementById("legend-parking").hidden = !toggleParking.checked;
+      if (toggleParking.checked) map.addLayer(parkingLayer); else map.removeLayer(parkingLayer);
     });
   </script>
 </body>
@@ -1485,15 +1578,20 @@ def main() -> None:
     row_fc = build_layer(SEGMENTS, nets, "row")
     print("--- 3.4.3 pavement ---")
     pavement_fc = build_layer(CONDITION_SEGMENTS, nets, "pavement")
+    print("--- 3.5 parking ---")
+    parking_fc = parking_feature_collection()
     (HERE / "table-3-15.geojson").write_text(json.dumps(row_fc))
     (HERE / "table-3-16-18.geojson").write_text(json.dumps(pavement_fc))
+    (HERE / "table-3-21-26.geojson").write_text(json.dumps(parking_fc))
     html = (
         HTML.replace("ROW_GEOJSON_PLACEHOLDER", json.dumps(row_fc))
         .replace("PAVEMENT_GEOJSON_PLACEHOLDER", json.dumps(pavement_fc))
+        .replace("PARKING_GEOJSON_PLACEHOLDER", json.dumps(parking_fc))
     )
     (HERE / "index.html").write_text(html)
     print(f"wrote {HERE / 'table-3-15.geojson'}")
     print(f"wrote {HERE / 'table-3-16-18.geojson'}")
+    print(f"wrote {HERE / 'table-3-21-26.geojson'}")
     print(f"wrote {HERE / 'index.html'}")
 
 
