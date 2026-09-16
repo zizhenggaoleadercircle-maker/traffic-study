@@ -1273,7 +1273,7 @@ HTML = """<!DOCTYPE html>
     <p>Appendix A, <em>North York at the Centre</em> Phase 1 Background Report. Lines are OSM street centreline, not legal ROW polygons.</p>
     <div class="layers">
       <label><input type="checkbox" id="toggle-row" checked /> 3.4.1 Right-of-way / excess pavement</label>
-      <label><input type="checkbox" id="toggle-pavement" checked /> 3.4.3 Pavement condition (Fair / Poor)</label>
+      <label><input type="checkbox" id="toggle-pavement" /> 3.4.3 Pavement condition (Fair / Poor)</label>
     </div>
     <form class="search" id="search-form" role="search">
       <label class="visually-hidden" for="street-search" style="position:absolute;left:-9999px">Street</label>
@@ -1290,7 +1290,7 @@ HTML = """<!DOCTYPE html>
       <div><span style="background:#c47a3a"></span> 1.0–2.0 m</div>
       <div><span style="background:#b42318"></span> over 2.0 m</div>
     </div>
-    <div class="legend" id="legend-pavement">
+    <div class="legend" id="legend-pavement" hidden>
       <h2>3.4.3 Condition</h2>
       <div><span style="background:#8a6a28;height:0;border-top:3px dashed #8a6a28"></span> Fair</div>
       <div><span style="background:#7a1f1a;height:0;border-top:3px dashed #7a1f1a"></span> Poor</div>
@@ -1357,10 +1357,10 @@ HTML = """<!DOCTYPE html>
         lyr.bindPopup(popupHtml(feat.properties));
         corridors.push(lyr);
       }
-    }).addTo(map);
+    });
 
-    const allBounds = L.featureGroup([rowLayer, pavementLayer]).getBounds();
-    if (allBounds.isValid()) map.fitBounds(allBounds, { padding: [40, 40] });
+    const rowBounds = rowLayer.getBounds();
+    if (rowBounds.isValid()) map.fitBounds(rowBounds, { padding: [40, 40] });
 
     const names = [...new Set(corridors.map((lyr) => lyr.feature.properties.street))].sort();
     const datalist = document.getElementById("street-names");
@@ -1410,9 +1410,12 @@ HTML = """<!DOCTYPE html>
         statusEl.textContent = "Type a street name, then search.";
         return;
       }
-      const hits = corridors.filter((lyr) => layerVisible(lyr) && haystack(lyr.feature.properties).includes(q));
+      const matches = corridors.filter((lyr) => haystack(lyr.feature.properties).includes(q));
+      const hits = matches.filter(layerVisible);
       if (!hits.length) {
-        statusEl.textContent = `No visible corridor matches “${query.trim()}”.`;
+        statusEl.textContent = matches.length
+          ? `${matches.length} matches are in a layer that is turned off.`
+          : `No corridor matches “${query.trim()}”.`;
         return;
       }
       if (hits.length === 1) {
@@ -1444,8 +1447,16 @@ HTML = """<!DOCTYPE html>
       document.getElementById("legend-row").hidden = !toggleRow.checked;
     });
     togglePavement.addEventListener("change", () => {
-      if (togglePavement.checked) map.addLayer(pavementLayer); else map.removeLayer(pavementLayer);
       document.getElementById("legend-pavement").hidden = !togglePavement.checked;
+      if (!togglePavement.checked) {
+        map.removeLayer(pavementLayer);
+        return;
+      }
+      map.addLayer(pavementLayer);
+      // The condition tables reach Bathurst, Steeles, and Bayview, well outside
+      // the Table 3-15 extent, so widen the view when this layer first appears.
+      const bounds = pavementLayer.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40] });
     });
   </script>
 </body>
