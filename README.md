@@ -49,6 +49,7 @@ Copy [.env.example](.env.example) to `.env` in the project root and set **`DATAB
 | [samples/](samples/) | Optional examples (placeholder) |
 | [res/](res/) | Static resources / assets (placeholder) |
 | [tools/](tools/) | Helper scripts not part of the package |
+| [docs/](docs/) | GitHub Pages site: North York Centre ROW map |
 | [.config/](.config/) | Versioned configuration notes (no secrets) |
 | `build/` | Local build output (gitignored) |
 

@@ -5,3 +5,6 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.DS_Store
+tools/nyc_row_map/overpass-cache.json
+tools/nyc_row_map/overpass.query
